@@ -2903,15 +2903,51 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             pfrom->nVersion = 300;
         if (!vRecv.empty())
             vRecv >> addrFrom >> nNonce;
+        //if (!vRecv.empty())
+        //   vRecv >> pfrom->strSubVer;
+         
+	    //  mo-inserted code from litebar new version
         if (!vRecv.empty())
+        {
             vRecv >> pfrom->strSubVer;
+            printf("mo notice: peer connecting subver is %s",pfrom->strSubVer.c_str());
+              
+            std::size_t iFoundPosition = pfrom->strSubVer.find("Xeni");
+            if(iFoundPosition != std::string::npos)
+            {
+                printf("  -  disconnecting .....\n");
+                pfrom->fDisconnect = true;
+                return false;
+            }
+             
+            std::size_t iFoundPosition2 = pfrom->strSubVer.find("Xeni");
+            if(iFoundPosition2 != std::string::npos)
+            {
+                printf("  -  disconnecting .....\n");
+                pfrom->fDisconnect = true;
+                return false;
+            }
+
+            std::size_t iFoundPosition3 = pfrom->strSubVer.find("xeni");
+            if(iFoundPosition3 != std::string::npos)
+            {
+                printf("  -  disconnecting .....\n");
+                pfrom->fDisconnect = true;
+                return false;
+            }
+ 
+  
+             printf("\n");
+             
+        }
+    
         if (!vRecv.empty())
             vRecv >> pfrom->nStartingHeight;
-
-        if (pfrom->fInbound && addrme.IsRoutable())
+	    
+        if (pfrom->fInbound && addrMe.IsRoutable())
         {
-            pfrom->addrLocal = addrme;
-            SeenLocal(addrme);
+            pfrom->addrLocal = addrMe;
+            SeenLocal(addrMe);
         }
 
         // Disconnect if we connected to ourself
