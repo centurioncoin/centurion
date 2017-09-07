@@ -994,11 +994,45 @@ int64_t GetProofOfWorkReward(int64_t nFees)
 {
     int64_t nSubsidy = 0 * COIN;
  
+    if(pindexBest->nMoneySupply <= 50000000)
+    {
+        nSubsidy = 100 * COIN;
+    }
+    else if(pindexBest->nMoneySupply <= 75000000)
+    {
+        nSubsidy = 75 * COIN;
+    }
+    else if(pindexBest->nMoneySupply <= 125000000)
+    {
+        nSubsidy = 56.25 * COIN;
+    }
+    else if(pindexBest->nMoneySupply <= 175000000)
+    {
+        nSubsidy = 14.0625 * COIN;
+    }
+    else if(pindexBest->nMoneySupply <= 250000000)
+    {
+        nSubsidy = 7.03125 * COIN;
+    }
+    else
+    {
+        nSubsidy = 0 * COIN;
+    }
+    if (fDebug && GetBoolArg("-printcreation"))
+        printf("GetProofOfWorkReward() : create=%s nSubsidy=%"PRId64"\n", FormatMoney(nSubsidy).c_str(), nSubsidy);
+	
+    return nSubsidy + nFees;
+}
+
+int64_t GetProofOfWorkRewardOld(int64_t nFees)
+{
+    int64_t nSubsidy = 0 * COIN;
+
     if(pindexBest->nHeight+1 == 1)
     {
         nSubsidy = 50000000 * COIN;
     }
-	    else if(pindexBest->nHeight+1 >= 2 && pindexBest->nHeight+1 <= 100)
+        else if(pindexBest->nHeight+1 >= 2 && pindexBest->nHeight+1 <= 100)
     {
         nSubsidy = 0 * COIN;
     }
@@ -1006,41 +1040,41 @@ int64_t GetProofOfWorkReward(int64_t nFees)
     {
         nSubsidy = 100 * COIN;
     }
-		else if(pindexBest->nHeight+1 >= 250101 && pindexBest->nHeight+1 <= 500100)
+        else if(pindexBest->nHeight+1 >= 250101 && pindexBest->nHeight+1 <= 500100)
     {
         nSubsidy = 75 * COIN;
     }
-		else if(pindexBest->nHeight+1 >= 500101 && pindexBest->nHeight+1 <= 1000100)
+        else if(pindexBest->nHeight+1 >= 500101 && pindexBest->nHeight+1 <= 1000100)
     {
         nSubsidy = 60 * COIN;
     }
-		else if(pindexBest->nHeight+1 >= 1000101 && pindexBest->nHeight+1 <= 2000100)
+        else if(pindexBest->nHeight+1 >= 1000101 && pindexBest->nHeight+1 <= 2000100)
     {
         nSubsidy = 50 * COIN;
     }
-		else if(pindexBest->nHeight+1 >= 2000101 && pindexBest->nHeight+1 <= 2500100)
+        else if(pindexBest->nHeight+1 >= 2000101 && pindexBest->nHeight+1 <= 2500100)
     {
         nSubsidy = 25 * COIN;
     }
-		else if(pindexBest->nHeight+1 >= 2500101 && pindexBest->nHeight+1 <= 3500100)
+        else if(pindexBest->nHeight+1 >= 2500101 && pindexBest->nHeight+1 <= 3500100)
     {
         nSubsidy = 10 * COIN;
     }
-	else if(pindexBest->nHeight+1 >= 3500101 && pindexBest->nHeight+1 <= 4000100)
+    else if(pindexBest->nHeight+1 >= 3500101 && pindexBest->nHeight+1 <= 4000100)
     {
         nSubsidy = 5 * COIN;
     }
-	else if(pindexBest->nHeight+1 >= 4000101 && pindexBest->nHeight+1 <= 5000100)
+    else if(pindexBest->nHeight+1 >= 4000101 && pindexBest->nHeight+1 <= 5000100)
     {
         nSubsidy = 2.5 * COIN;
     }
-	else if(pindexBest->nHeight+1 >= 5000101 && pindexBest->nHeight+1 <= 19000000)
+    else if(pindexBest->nHeight+1 >= 5000101 && pindexBest->nHeight+1 <= 19000000)
     {
         nSubsidy = 1 * COIN;
     }
     if (fDebug && GetBoolArg("-printcreation"))
         printf("GetProofOfWorkReward() : create=%s nSubsidy=%"PRId64"\n", FormatMoney(nSubsidy).c_str(), nSubsidy);
-	
+
     return nSubsidy + nFees;
 }
 
