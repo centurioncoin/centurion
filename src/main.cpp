@@ -1045,12 +1045,21 @@ int64_t GetProofOfWorkReward(int64_t nFees)
 }
 
 const int DAILY_BLOCKCOUNT =  1440;
-// miner's coin stake reward based on coin age spent (coin-days)
-int64_t GetProofOfStakeReward(int64_t nCoinAge, int64_t nFees)
+// miner's coin stake reward based on coin age spent (coin-days) and coin value
+int64_t GetProofOfStakeReward(int64_t nValueResult, int64_t nCoinAge, int64_t nFees)
 {
     int64_t nRewardCoinYear;
 
-    nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE;
+    if(nValueResult <= 249999 * COIN)
+        nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE_level1;
+    else if(nValueResult <= 499999 * COIN)
+        nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE_level2;
+    else if(nValueResult <= 999999 * COIN)
+        nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE_level3;
+    else if(nValueResult <= 4999999 * COIN)
+        nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE_level4;
+    else
+        nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE_level5;
 
     int64_t nSubsidy = nCoinAge * nRewardCoinYear / 365 / COIN;
 
@@ -1643,10 +1652,11 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
     {
         // ppcoin: coin stake tx earns reward instead of paying fee
         uint64_t nCoinAge;
-        if (!vtx[1].GetCoinAge(txdb, nCoinAge))
-            return error("ConnectBlock() : %s unable to get coin age for coinstake", vtx[1].GetHash().ToString().substr(0,10).c_str());
+        uint64_t nCoinStakeValue;
+        if (!vtx[1].GetCoinAgeAndValueStake(txdb, nCoinAge, nCoinStakeValue))
+            return error("ConnectBlock() : %s unable to get coin age and value for coinstake", vtx[1].GetHash().ToString().substr(0,10).c_str());
 
-        int64_t nCalculatedStakeReward = GetProofOfStakeReward(nCoinAge, nFees);
+        int64_t nCalculatedStakeReward = GetProofOfStakeReward(nCoinStakeValue, nCoinAge, nFees);
 
         if (nStakeReward > nCalculatedStakeReward)
             return DoS(100, error("ConnectBlock() : coinstake pays too much(actual=%"PRId64" vs calculated=%"PRId64")", nStakeReward, nCalculatedStakeReward));
@@ -1935,10 +1945,11 @@ bool CBlock::SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew)
 // guaranteed to be in main chain by sync-checkpoint. This rule is
 // introduced to help nodes establish a consistent view of the coin
 // age (trust score) of competing branches.
-bool CTransaction::GetCoinAge(CTxDB& txdb, uint64_t& nCoinAge) const
+bool CTransaction::GetCoinAgeAndValueStake(CTxDB& txdb, uint64_t& nCoinAge, uint64_t& nCoinValue) const
 {
     CBigNum bnCentSecond = 0;  // coin age in the unit of cent-seconds
     nCoinAge = 0;
+    nCoinValue = 0;
 
     if (IsCoinBase())
         return true;
@@ -1961,6 +1972,7 @@ bool CTransaction::GetCoinAge(CTxDB& txdb, uint64_t& nCoinAge) const
             continue; // only count coins meeting min age requirement
 
         int64_t nValueIn = txPrev.vout[txin.prevout.n].nValue;
+        nCoinValue += nValueIn;
         bnCentSecond += CBigNum(nValueIn) * (nTime-txPrev.nTime) / CENT;
 
         if (fDebug && GetBoolArg("-printcoinage"))
@@ -1969,22 +1981,27 @@ bool CTransaction::GetCoinAge(CTxDB& txdb, uint64_t& nCoinAge) const
 
     CBigNum bnCoinDay = bnCentSecond * CENT / (24 * 60 * 60);
     if (fDebug && GetBoolArg("-printcoinage"))
-        printf("coin age bnCoinDay=%s\n", bnCoinDay.ToString().c_str());
+        printf("coin age bnCoinDay=%s and coin value=%"PRId64"\n", bnCoinDay.ToString().c_str(), nCoinValue);
     nCoinAge = bnCoinDay.getuint64();
     return true;
 }
 
 // ppcoin: total coin age spent in block, in the unit of coin-days.
-bool CBlock::GetCoinAge(uint64_t& nCoinAge) const
+bool CBlock::GetCoinAgeAndValueStake(uint64_t& nCoinAge, uint64_t& nCoinValue) const
 {
     nCoinAge = 0;
+    nCoinValue = 0;
 
     CTxDB txdb("r");
     BOOST_FOREACH(const CTransaction& tx, vtx)
     {
         uint64_t nTxCoinAge;
-        if (tx.GetCoinAge(txdb, nTxCoinAge))
+        uint64_t nTxCoinValue;
+        if (tx.GetCoinAgeAndValueStake(txdb, nTxCoinAge, nTxCoinValue))
+        {
             nCoinAge += nTxCoinAge;
+            nCoinValue += nTxCoinValue;
+        }
         else
             return false;
     }
@@ -1992,9 +2009,10 @@ bool CBlock::GetCoinAge(uint64_t& nCoinAge) const
     if (nCoinAge == 0) // block coin age minimum 1 coin-day
         nCoinAge = 1;
     if (fDebug && GetBoolArg("-printcoinage"))
-        printf("block coin age total nCoinDays=%"PRId64"\n", nCoinAge);
+        printf("block coin age total nCoinDays=%"PRId64" and nCoinValue=%"PRId64 "\n", nCoinAge, nCoinValue);
     return true;
 }
+
 
 bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos, const uint256& hashProofOfStake)
 {

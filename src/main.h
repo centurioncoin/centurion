@@ -38,7 +38,12 @@ static const int64_t MIN_TX_FEE = 1000;
 static const int64_t MIN_RELAY_TX_FEE = MIN_TX_FEE;
 static const int64_t MAX_MONEY = 250000000  * COIN;
 static const int64_t COIN_YEAR_REWARD = 5 * CENT; // 3% per year
-static const int64_t MAX_MINT_PROOF_OF_STAKE = 3 * COIN;	// 3% annual interest
+static const int64_t MAX_MINT_PROOF_OF_STAKE_level1 = 3 * COIN;
+static const int64_t MAX_MINT_PROOF_OF_STAKE_level2 = 5 * COIN;
+static const int64_t MAX_MINT_PROOF_OF_STAKE_level3 = 7 * COIN;
+static const int64_t MAX_MINT_PROOF_OF_STAKE_level4 = 10 * COIN;
+static const int64_t MAX_MINT_PROOF_OF_STAKE_level5 = 15 * COIN;
+
 static const int MODIFIER_INTERVAL_SWITCH = 2000;
 
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
@@ -115,7 +120,8 @@ bool LoadExternalBlockFile(FILE* fileIn);
 bool CheckProofOfWork(uint256 hash, unsigned int nBits);
 unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake);
 int64_t GetProofOfWorkReward(int64_t nFees);
-int64_t GetProofOfStakeReward(int64_t nCoinAge, int64_t nFees);
+int64_t GetProofOfStakeReward(int64_t nCoinStakeValue, int64_t nCoinAge, int64_t nFees);
+
 unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime);
 unsigned int ComputeMinStake(unsigned int nBase, int64_t nTime, unsigned int nBlockTime);
 int GetNumBlocksOfPeers();
@@ -696,7 +702,7 @@ public:
     bool ClientConnectInputs();
     bool CheckTransaction() const;
     bool AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs=true, bool* pfMissingInputs=NULL);
-    bool GetCoinAge(CTxDB& txdb, uint64_t& nCoinAge) const;  // ppcoin: get transaction coin age
+    bool GetCoinAgeAndValueStake(CTxDB& txdb, uint64_t& nCoinAge, uint64_t& nCoinValue) const;  // ppcoin: get transaction coin age and value
 
 protected:
     const CTxOut& GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
@@ -1086,7 +1092,7 @@ public:
     bool AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos, const uint256& hashProofOfStake);
     bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true, bool fCheckSig=true) const;
     bool AcceptBlock();
-    bool GetCoinAge(uint64_t& nCoinAge) const; // ppcoin: calculate total coin age spent in block
+    bool GetCoinAgeAndValueStake(uint64_t& nCoinAge, uint64_t& nCoinValue) const; // ppcoin: calculate total coin age spent in block
     bool SignBlock(CWallet& keystore, int64_t nFees);
     bool CheckBlockSignature() const;
 
