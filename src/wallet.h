@@ -215,8 +215,8 @@ public:
     }
     int64_t GetCredit(const CTxOut& txout) const
     {
-        if (!MoneyRange(txout.nValue))
-            throw std::runtime_error("CWallet::GetCredit() : value out of range");
+        // if (!MoneyRange(txout.nValue))
+        //     throw std::runtime_error("CWallet::GetCredit() : value out of range");
         return (IsMine(txout) ? txout.nValue : 0);
     }
     bool IsChange(const CTxOut& txout) const;
@@ -254,8 +254,8 @@ public:
         BOOST_FOREACH(const CTxOut& txout, tx.vout)
         {
             nCredit += GetCredit(txout);
-            if (!MoneyRange(nCredit))
-                throw std::runtime_error("CWallet::GetCredit() : value out of range");
+            // if (!MoneyRange(nCredit))
+            //     throw std::runtime_error("CWallet::GetCredit() : value out of range");
         }
         return nCredit;
     }
@@ -611,8 +611,8 @@ public:
             {
                 const CTxOut &txout = vout[i];
                 nCredit += pwallet->GetCredit(txout);
-                if (!MoneyRange(nCredit))
-                    throw std::runtime_error("CWalletTx::GetAvailableCredit() : value out of range");
+                // if (!MoneyRange(nCredit))
+                //     throw std::runtime_error("CWalletTx::GetAvailableCredit() : value out of range");
             }
         }
 
