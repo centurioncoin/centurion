@@ -570,8 +570,8 @@ public:
         BOOST_FOREACH(const CTxOut& txout, vout)
         {
             nValueOut += txout.nValue;
-            if (!MoneyRange(txout.nValue) || !MoneyRange(nValueOut))
-                throw std::runtime_error("CTransaction::GetValueOut() : value out of range");
+            // if (!MoneyRange(txout.nValue) || !MoneyRange(nValueOut))
+            //     throw std::runtime_error("CTransaction::GetValueOut() : value out of range");
         }
         return nValueOut;
     }
