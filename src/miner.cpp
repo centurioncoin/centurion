@@ -84,7 +84,7 @@ public:
 uint64_t nLastBlockTx = 0;
 uint64_t nLastBlockSize = 0;
 int64_t nLastCoinStakeSearchInterval = 0;
- 
+
 // We want to sort transactions by priority and fee, so:
 typedef boost::tuple<double, double, CTransaction*> TxPriority;
 class TxPriorityCompare
@@ -141,6 +141,19 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
 
     // Add our coinbase tx as first transaction
     pblock->vtx.push_back(txNew);
+
+    // Create tx which send 1/3 fee
+    CTransaction txFee;
+    txFee.vin.resize(1);
+    txFee.vin[0].prevout.SetNull();
+    txFee.vout.resize(1);
+
+    const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
+    const CTxDestination destinationAddress = address.Get();
+    txFee.vout[0].scriptPubKey.SetDestination(destinationAddress);
+
+    // Add send fee tx as second transaction
+    pblock->vtx.push_back(txFee);
 
     // Largest block you're willing to create:
     unsigned int nBlockMaxSize = GetArg("-blockmaxsize", MAX_BLOCK_SIZE_GEN/2);
@@ -359,11 +372,13 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
         if (fDebug && GetBoolArg("-printpriority"))
             printf("CreateNewBlock(): total size %"PRIu64"\n", nBlockSize);
 
+
+        pblock->vtx[1].vout[0].nValue = nFees / 3;
         if (!fProofOfStake)
-            pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(nFees);
+            pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(nFees - pblock->vtx[1].vout[0].nValue);
 
         if (pFees)
-            *pFees = nFees;
+            *pFees = nFees - pblock->vtx[1].vout[0].nValue;
 
         // Add tx with premined coins
         if (pindexPrev->nHeight + 1 == PREMINE_HEIGHT) {
