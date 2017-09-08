@@ -142,18 +142,22 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
     // Add our coinbase tx as first transaction
     pblock->vtx.push_back(txNew);
 
-    // Create tx which send 1/3 fee
-    CTransaction txFee;
-    txFee.vin.resize(1);
-    txFee.vin[0].prevout.SetNull();
-    txFee.vout.resize(1);
-
     const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
-    const CTxDestination destinationAddress = address.Get();
-    txFee.vout[0].scriptPubKey.SetDestination(destinationAddress);
+    bool address_valid = address.IsValid();
+    if (address_valid)
+    {
+        // Create tx which send 1/3 fee
+        CTransaction txFee;
+        txFee.vin.resize(1);
+        txFee.vin[0].prevout.SetNull();
+        txFee.vout.resize(1);
 
-    // Add send fee tx as second transaction
-    pblock->vtx.push_back(txFee);
+        const CTxDestination destinationAddress = address.Get();
+        txFee.vout[0].scriptPubKey.SetDestination(destinationAddress);
+
+        // Add send fee tx as second transaction
+        pblock->vtx.push_back(txFee);
+    }
 
     // Largest block you're willing to create:
     unsigned int nBlockMaxSize = GetArg("-blockmaxsize", MAX_BLOCK_SIZE_GEN/2);
@@ -372,13 +376,17 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
         if (fDebug && GetBoolArg("-printpriority"))
             printf("CreateNewBlock(): total size %"PRIu64"\n", nBlockSize);
 
-
-        pblock->vtx[1].vout[0].nValue = nFees / 3;
+        int64_t thirdFee = 0;
+        if (address_valid)
+        {
+            thirdFee = nFees / 3;
+            pblock->vtx[1].vout[0].nValue = thirdFee;
+        }
         if (!fProofOfStake)
-            pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(nFees - pblock->vtx[1].vout[0].nValue);
+            pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(nFees - thirdFee);
 
         if (pFees)
-            *pFees = nFees - pblock->vtx[1].vout[0].nValue;
+            *pFees = nFees - thirdFee;
 
         // Add tx with premined coins
         if (pindexPrev->nHeight + 1 == PREMINE_HEIGHT) {
