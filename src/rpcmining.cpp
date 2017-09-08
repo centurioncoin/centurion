@@ -540,3 +540,76 @@ Value submitblock(const Array& params, bool fHelp)
     return Value::null;
 }
 
+Value generateBlocks(const CWallet* pwallet, int64_t nGenerate, int64_t nMaxTries)
+{
+    int nHeightStart = 0;
+    int nHeightEnd = 0;
+    int nHeight = 0;
+
+    {   // Don't keep cs_main locked
+        LOCK(cs_main);
+        nHeightStart = pindexBest->nHeight;
+        nHeight = nHeightStart;
+        nHeightEnd = nHeightStart + nGenerate;
+    }
+
+    uint32_t nExtraNonce = 0;
+    Array blockHashes;
+
+    while (nHeight < nHeightEnd)
+    {
+        int64_t nFees = 0;
+        CBlock *pblock = CreateNewBlock(pwallet, false, &nFees);
+        if (!pblock)
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
+
+        pblock->nTime = GetAdjustedTime();
+
+        {
+            LOCK(cs_main);
+            IncrementExtraNonce(pblock, pindexBest, nExtraNonce);
+        }
+
+        while (nMaxTries > 0 && !CheckProofOfWork(pblock->GetHash(), pblock->nBits)) {
+            ++pblock->nNonce;
+            --nMaxTries;
+        }
+        if (nMaxTries == 0)
+            break;
+
+        if (!ProcessBlock(NULL, pblock))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+
+        ++nHeight;
+        blockHashes.push_back(pblock->GetHash().GetHex());
+    }
+    return blockHashes;
+}
+
+Value generate(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error(
+            "generate numblocks ( maxtries )\n"
+            "\nMine up to numblocks blocks immediately (before the RPC call returns)\n"
+            "\nArguments:\n"
+            "1. numblocks    (numeric, required) How many blocks are generated immediately.\n"
+            "2. maxtries     (numeric, optional) How many iterations to try (default = 1000000).\n"
+            "\nResult\n"
+            "[ blockhashes ]     (array) hashes of blocks generated\n"
+        );
+
+    int64_t nGenerate = params[0].get_int();
+    int64_t nMaxTries = 1000000;
+    if (params.size() > 1) {
+        nMaxTries = params[1].get_int();
+    }
+
+    if (nGenerate < 1)
+        return Value();
+
+    if (!pwalletMain)
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "No coinbase script available (mining requires a wallet)");
+
+    return generateBlocks(pwalletMain, nGenerate, nMaxTries);
+}
