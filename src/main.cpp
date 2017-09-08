@@ -13,10 +13,11 @@
 #include "ui_interface.h"
 #include "kernel.h"
 #include "zerocoin/Zerocoin.h"
+#include "miner.h"
+
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
-
 
 using namespace std;
 using namespace boost;
@@ -487,11 +488,11 @@ bool CTransaction::CheckTransaction() const
             return DoS(100, error("CTransaction::CheckTransaction() : txout empty for user transaction"));
         if (txout.nValue < 0)
             return DoS(100, error("CTransaction::CheckTransaction() : txout.nValue negative"));
-        if (txout.nValue > MAX_MONEY)
-            return DoS(100, error("CTransaction::CheckTransaction() : txout.nValue too high"));
+        // if (txout.nValue > MAX_MONEY)
+        //     return DoS(100, error("CTransaction::CheckTransaction() : txout.nValue too high"));
         nValueOut += txout.nValue;
-        if (!MoneyRange(nValueOut))
-            return DoS(100, error("CTransaction::CheckTransaction() : txout total out of range"));
+        // if (!MoneyRange(nValueOut))
+        //     return DoS(100, error("CTransaction::CheckTransaction() : txout total out of range"));
     }
 
     // Check for duplicate inputs
@@ -1634,7 +1635,7 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
     {
         int64_t nReward = GetProofOfWorkReward(nFees);
         // Check coinbase reward
-        if (vtx[0].GetValueOut() > nReward)
+        if (vtx[0].GetValueOut() > nReward && pindex->nHeight != PREMINE_HEIGHT)
             return DoS(50, error("ConnectBlock() : coinbase reward exceeded (actual=%"PRId64" vs calculated=%"PRId64")",
                    vtx[0].GetValueOut(),
                    nReward));
