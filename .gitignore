@@ -4,5 +4,5 @@ qrc_*.cpp
 # Compilation and Qt preprocessor part
 build/
 *.qm
-Makefile
+/Makefile
 centurion-qt
