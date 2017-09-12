@@ -989,59 +989,98 @@ uint256 WantedByOrphan(const CBlock* pblockOrphan)
     return pblockOrphan->hashPrevBlock;
 }
 
+double GetDifficulty(unsigned int nBits)
+{
+    // Floating point number that is a multiple of the minimum difficulty,
+    // minimum difficulty = 1.0.
+    int nShift = (nBits >> 24) & 0xff;
+
+    double dDiff =
+        (double)0x0000ffff / (double)(nBits & 0x00ffffff);
+
+    while (nShift < 29)
+    {
+        dDiff *= 256.0;
+        nShift++;
+    }
+    while (nShift > 29)
+    {
+        dDiff /= 256.0;
+        nShift--;
+    }
+
+    return dDiff;
+}
+
 // miner's coin base reward
 int64_t GetProofOfWorkReward(int64_t nFees)
 {
-    int64_t nSubsidy = 0 * COIN;
- 
-    if(pindexBest->nHeight+1 == 1)
+    int32_t nextHeight = pindexBest->nHeight + 1;
+    int64_t maxProofOfWork = 0;
+
+    if (nextHeight == 1)
+        return 50000000 * COIN + nFees;
+    else if (nextHeight <= 100)
+        maxProofOfWork = 0;
+    else if (nextHeight <= 250100)
+        maxProofOfWork = 100;
+    else if (nextHeight <= 500100)
+        maxProofOfWork = 75;
+    else if (nextHeight <= 1000100)
+        maxProofOfWork = 60;
+    else if (nextHeight <= 2000100)
+        maxProofOfWork = 50;
+    else if (nextHeight <= 2500100)
+        maxProofOfWork = 25;
+    else if (nextHeight <= 3500100)
+        maxProofOfWork = 10;
+    else if (nextHeight <= 4000100)
+        maxProofOfWork = 5;
+    else if (nextHeight <= 5000100)
+        maxProofOfWork = 2.5;
+    else if (nextHeight <= LAST_POW_BLOCK)
+        maxProofOfWork = 1;
+
+    maxProofOfWork *= COIN;
+        
+    uint32_t nBits = GetNextTargetRequired(pindexBest, false);
+
+    CBigNum bnSubsidyLimit = maxProofOfWork;
+    CBigNum bnTarget;
+    bnTarget.SetCompact(nBits);
+    CBigNum bnTargetLimit(fTestNet ? bnProofOfWorkLimitTestNet : bnProofOfWorkLimit);
+    bnTargetLimit.SetCompact(bnTargetLimit.GetCompact()); // ???
+
+    // ppcoin: subsidy is cut in half every 16x multiply of difficulty
+    // A reasonably continuous curve is used to avoid shock to market
+    // (nSubsidyLimit / nSubsidy) ** 4 == bnProofOfWorkLimit / bnTarget
+    CBigNum bnLowerBound = CENT;
+    CBigNum bnUpperBound = bnSubsidyLimit;
+    CBigNum bnMidPart, bnRewardPart;
+
+    bool bLowDiff = GetDifficulty(nBits) < 512;
+    bnRewardPart = bLowDiff ? bnSubsidyLimit * bnSubsidyLimit * bnSubsidyLimit * bnSubsidyLimit * bnSubsidyLimit * bnSubsidyLimit :
+                                bnSubsidyLimit * bnSubsidyLimit * bnSubsidyLimit * bnSubsidyLimit;
+    while (bnLowerBound + CENT <= bnUpperBound)
     {
-        nSubsidy = 50000000 * COIN;
+        CBigNum bnMidValue = (bnLowerBound + bnUpperBound) / 2;
+        bnMidPart = bLowDiff ? bnMidValue * bnMidValue * bnMidValue * bnMidValue * bnMidValue * bnMidValue :
+                                bnMidValue * bnMidValue * bnMidValue * bnMidValue;
+        if (fDebug && GetBoolArg("-printcreation", false))
+            printf("GetProofOfWorkReward() : lower=%lld upper=%lld mid=%lld\n", bnLowerBound.getuint64(), bnUpperBound.getuint64(), bnMidValue.getuint64());
+
+        if (bnMidPart * bnTargetLimit > bnRewardPart * bnTarget)
+            bnUpperBound = bnMidValue;
+        else
+            bnLowerBound = bnMidValue;
     }
-	    else if(pindexBest->nHeight+1 >= 2 && pindexBest->nHeight+1 <= 100)
-    {
-        nSubsidy = 0 * COIN;
-    }
-        else if(pindexBest->nHeight+1 >= 101 && pindexBest->nHeight+1 <= 250100)
-    {
-        nSubsidy = 100 * COIN;
-    }
-		else if(pindexBest->nHeight+1 >= 250101 && pindexBest->nHeight+1 <= 500100)
-    {
-        nSubsidy = 75 * COIN;
-    }
-		else if(pindexBest->nHeight+1 >= 500101 && pindexBest->nHeight+1 <= 1000100)
-    {
-        nSubsidy = 60 * COIN;
-    }
-		else if(pindexBest->nHeight+1 >= 1000101 && pindexBest->nHeight+1 <= 2000100)
-    {
-        nSubsidy = 50 * COIN;
-    }
-		else if(pindexBest->nHeight+1 >= 2000101 && pindexBest->nHeight+1 <= 2500100)
-    {
-        nSubsidy = 25 * COIN;
-    }
-		else if(pindexBest->nHeight+1 >= 2500101 && pindexBest->nHeight+1 <= 3500100)
-    {
-        nSubsidy = 10 * COIN;
-    }
-	else if(pindexBest->nHeight+1 >= 3500101 && pindexBest->nHeight+1 <= 4000100)
-    {
-        nSubsidy = 5 * COIN;
-    }
-	else if(pindexBest->nHeight+1 >= 4000101 && pindexBest->nHeight+1 <= 5000100)
-    {
-        nSubsidy = 2.5 * COIN;
-    }
-	else if(pindexBest->nHeight+1 >= 5000101 && pindexBest->nHeight+1 <= 19000000)
-    {
-        nSubsidy = 1 * COIN;
-    }
-    if (fDebug && GetBoolArg("-printcreation"))
-        printf("GetProofOfWorkReward() : create=%s nSubsidy=%"PRId64"\n", FormatMoney(nSubsidy).c_str(), nSubsidy);
-	
-    return nSubsidy + nFees;
+
+    int64_t nSubsidy = bnUpperBound.getuint64();
+    nSubsidy = (nSubsidy / CENT) * CENT;
+    if (fDebug && GetBoolArg("-printcreation", false))
+        printf("GetProofOfWorkReward() : create=%s nBits=0x%08x nSubsidy=%lld\n", FormatMoney(nSubsidy), nBits, nSubsidy);
+
+    return std::min(nSubsidy + nFees, maxProofOfWork);
 }
 
 const int DAILY_BLOCKCOUNT =  1440;
