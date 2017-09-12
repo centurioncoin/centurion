@@ -50,6 +50,9 @@ void ExitTimeout(void* parg)
 #endif
 }
 
+// Tests have their own Shutdown and StartShutdown functions
+#ifndef BUILD_TESTS
+
 void StartShutdown()
 {
 #ifdef QT_GUI
@@ -108,6 +111,8 @@ void Shutdown(void* parg)
     }
 }
 
+#endif
+
 void HandleSIGTERM(int)
 {
     fRequestShutdown = true;
@@ -120,13 +125,11 @@ void HandleSIGHUP(int)
 
 
 
-
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // Start
 //
-#if !defined(QT_GUI)
+#if !defined(QT_GUI) && !defined(BUILD_TESTS)
 bool AppInit(int argc, char* argv[])
 {
     bool fRet = false;

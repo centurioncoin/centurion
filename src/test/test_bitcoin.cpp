@@ -1,12 +1,12 @@
 #define BOOST_TEST_MODULE Bitcoin Test Suite
+
+#include "init.h"
+#include "db.h"
+
 #include <boost/test/unit_test.hpp>
 
-#include "db.h"
-#include "main.h"
-#include "wallet.h"
-
-CWallet* pwalletMain;
-CClientUIInterface uiInterface;
+extern CWallet* pwalletMain;
+extern CClientUIInterface uiInterface;
 
 extern bool fPrintToConsole;
 extern void noui_connect();
