@@ -1090,7 +1090,7 @@ int64_t GetProofOfStakeReward(int64_t nValueResult, int64_t nCoinAge, int64_t nF
 {
     int64_t nRewardCoinYear;
 
-    if(nValueResult <= 249999 * COIN)
+    if(nValueResult <= 249999 * COIN || pindexBest->nHeight < BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
         nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE_level1;
     else if(nValueResult <= 499999 * COIN)
         nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE_level2;
