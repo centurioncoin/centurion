@@ -119,6 +119,9 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
 
     CBlockIndex* pindexPrev = pindexBest;
 
+    const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
+    bool address_valid = address.IsValid();
+
     // Create coinbase tx
     CTransaction txNew;
     txNew.vin.resize(1);
@@ -127,6 +130,12 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
 
     if (!fProofOfStake)
     {
+        if (address_valid && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
+        {
+            txNew.vout.resize(2);
+            const CTxDestination destinationAddress = address.Get();
+            txNew.vout[1].scriptPubKey.SetDestination(destinationAddress);
+        }
         CReserveKey reservekey(pwallet);
         txNew.vout[0].scriptPubKey.SetDestination(reservekey.GetReservedKey().GetID());
     }
@@ -141,23 +150,6 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
 
     // Add our coinbase tx as first transaction
     pblock->vtx.push_back(txNew);
-
-    const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
-    bool address_valid = address.IsValid();
-    if (address_valid && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
-    {
-        // Create tx which send 1/3 fee
-        CTransaction txFee;
-        txFee.vin.resize(1);
-        txFee.vin[0].prevout.SetNull();
-        txFee.vout.resize(1);
-
-        const CTxDestination destinationAddress = address.Get();
-        txFee.vout[0].scriptPubKey.SetDestination(destinationAddress);
-
-        // Add send fee tx as second transaction
-        pblock->vtx.push_back(txFee);
-    }
 
     // Largest block you're willing to create:
     unsigned int nBlockMaxSize = GetArg("-blockmaxsize", MAX_BLOCK_SIZE_GEN/2);
@@ -377,14 +369,15 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
             printf("CreateNewBlock(): total size %"PRIu64"\n", nBlockSize);
 
         int64_t thirdFee = 0;
-        if (address_valid && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
-        {
-            thirdFee = nFees / 3;
-            pblock->vtx[1].vout[0].nValue = thirdFee;
-        }
         if (!fProofOfStake)
+        {
+            if (address_valid && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
+            {
+                thirdFee = nFees / 3;
+                pblock->vtx[0].vout[1].nValue = thirdFee;
+            }
             pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(nFees - thirdFee);
-
+        }
         if (pFees)
             *pFees = nFees - thirdFee;
 
