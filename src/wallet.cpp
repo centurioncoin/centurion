@@ -1601,7 +1601,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         bool fKernelFound = false;
         for (unsigned int n=0; n<min(nSearchInterval,(int64_t)nMaxStakeSearchInterval) && !fKernelFound && !fShutdown && pindexPrev == pindexBest; n++)
         {
-            // Search backward in time from the given txNew timestamp 
+            // Search backward in time from the given txNew timestamp
             // Search nSearchInterval seconds back up to nMaxStakeSearchInterval
             uint256 hashProofOfStake = 0, targetProofOfStake = 0;
             COutPoint prevoutStake = COutPoint(pcoin.first->GetHash(), pcoin.second);
@@ -1712,6 +1712,20 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         }
     }
 
+    int64_t thirdFee = 0;
+    const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
+    bool take_third = address.IsValid() && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL;
+    if(take_third)
+    {
+        thirdFee = nFees / 3;
+        CTxOut thirdFeeOut;
+        const CTxDestination destinationAddress = address.Get();
+        thirdFeeOut.scriptPubKey.SetDestination(destinationAddress);
+        thirdFeeOut.nValue = thirdFee;
+
+        txNew.vout.push_back(thirdFeeOut);
+    }
+
     // Calculate coin age reward
     {
         uint64_t nCoinAge;
@@ -1720,7 +1734,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         if (!txNew.GetCoinAgeAndValueStake(txdb, nCoinAge, nCoinStakeValue))
             return error("CreateCoinStake : failed to calculate coin age and value");
 
-        int64_t nReward = GetProofOfStakeReward(nCoinStakeValue, nCoinAge, nFees);
+        int64_t nReward = GetProofOfStakeReward(nCoinAge, nFees - thirdFee);
         if (nReward <= 0)
             return false;
 
