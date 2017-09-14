@@ -144,7 +144,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
 
     const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
     bool address_valid = address.IsValid();
-    if (address_valid)
+    if (address_valid && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
     {
         // Create tx which send 1/3 fee
         CTransaction txFee;
@@ -377,7 +377,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
             printf("CreateNewBlock(): total size %"PRIu64"\n", nBlockSize);
 
         int64_t thirdFee = 0;
-        if (address_valid)
+        if (address_valid && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
         {
             thirdFee = nFees / 3;
             pblock->vtx[1].vout[0].nValue = thirdFee;
