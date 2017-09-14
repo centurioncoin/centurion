@@ -120,7 +120,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
     CBlockIndex* pindexPrev = pindexBest;
 
     const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
-    bool address_valid = address.IsValid();
+    bool take_third = address.IsValid() && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL;
 
     // Create coinbase tx
     CTransaction txNew;
@@ -130,7 +130,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
 
     if (!fProofOfStake)
     {
-        if (address_valid && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
+        if (take_third)
         {
             txNew.vout.resize(2);
             const CTxDestination destinationAddress = address.Get();
@@ -369,17 +369,16 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
             printf("CreateNewBlock(): total size %"PRIu64"\n", nBlockSize);
 
         int64_t thirdFee = 0;
-        if (!fProofOfStake)
+        if (take_third)
         {
-            if (address_valid && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
-            {
-                thirdFee = nFees / 3;
-                pblock->vtx[0].vout[1].nValue = thirdFee;
-            }
-            pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(nFees - thirdFee);
+            thirdFee = nFees / 3;
+            pblock->vtx[0].vout[1].nValue = thirdFee;
         }
+        if (!fProofOfStake)
+            pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(nFees - thirdFee);
+
         if (pFees)
-            *pFees = nFees - thirdFee;
+            *pFees = nFees;
 
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
