@@ -27,6 +27,9 @@ aux_source_directory("src" CORE_SOURCES)
 aux_source_directory("src/zerocoin" ZEROCOIN_SOURCES)
 set(CORE_SOURCES ${CORE_SOURCES} ${ZEROCOIN_SOURCES})
 
+add_executable(centuriond ${CORE_SOURCES})
+target_link_libraries(centuriond ${CORE_LIBS})
+
 if(BUILD_GUI)
     set(CMAKE_AUTOMOC ON)
     set(CMAKE_AUTORCC ON)
