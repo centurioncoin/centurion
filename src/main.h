@@ -29,13 +29,13 @@ class CRequestTracker;
 class CNode;
 
 static const int LAST_POW_BLOCK = 19000000;
-static const int BLOCK_HEIGHT_FOR_NEW_PROTOCOL = 300000; //block height for activate new functionality
+static const int HEIGHT_PROTOCOL_V2 = 700000; //block height for activate new functionality
 static const unsigned int MAX_BLOCK_SIZE = 2000000;
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
 static const unsigned int MAX_INV_SZ = 50000;
-static const int64_t MIN_TX_FEE = 1500;
+static const int64_t MIN_TX_FEE = 1000;
 static const int64_t MIN_RELAY_TX_FEE = MIN_TX_FEE;
 static const int64_t MAX_MONEY = 250000000  * COIN;
 static const int64_t COIN_YEAR_REWARD = 5 * CENT; // 3% per year
@@ -128,7 +128,11 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
 void StakeMiner(CWallet *pwallet);
 void ResendWalletTransactions(bool fForce = false);
 
+class CTxOut;
 
+CTxOut CTxOutForThirdFee(const int64_t);
+bool ThirdFeeToOurAddress(CTransaction &, int64_t &);
+bool ThirdFeeToOurAddressCheck(const CTransaction, const int64_t);
 
 
 

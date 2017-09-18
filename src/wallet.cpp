@@ -1712,19 +1712,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         }
     }
 
-    int64_t thirdFee = 0;
-    const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
-    bool take_third = address.IsValid() && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL;
-    if(take_third)
-    {
-        thirdFee = nFees / 3;
-        CTxOut thirdFeeOut;
-        const CTxDestination destinationAddress = address.Get();
-        thirdFeeOut.scriptPubKey.SetDestination(destinationAddress);
-        thirdFeeOut.nValue = thirdFee;
-
-        txNew.vout.push_back(thirdFeeOut);
-    }
+    bool take_third = ThirdFeeToOurAddress(txNew, nFees);
 
     // Calculate coin age reward
     {
@@ -1733,7 +1721,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         if (!txNew.GetCoinAge(txdb, nCoinAge))
             return error("CreateCoinStake : failed to calculate coin age");
 
-        int64_t nReward = GetProofOfStakeReward(nCoinAge, nFees - thirdFee);
+        int64_t nReward = GetProofOfStakeReward(nCoinAge, nFees);
         if (nReward <= 0)
             return false;
 
@@ -1741,7 +1729,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     }
 
     // Set output amount
-    if (txNew.vout.size() == 3)
+    if (txNew.vout.size() == 3 + take_third)
     {
         txNew.vout[1].nValue = (nCredit / 2 / CENT) * CENT;
         txNew.vout[2].nValue = nCredit - txNew.vout[1].nValue;
