@@ -6,7 +6,6 @@ option(BUILD_GUI "Build GUI" ON)
 option(BUILD_TESTS "Build tests" ON)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -fpermissive") # remove -w
 
 set(Boost_USE_STATIC_LIBS   ON)
 set(Boost_USE_MULTITHREADED ON)
@@ -36,26 +35,35 @@ if(BUILD_GUI)
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
     find_package(Qt5Widgets REQUIRED)
+    find_package(Qt5LinguistTools REQUIRED)
 
     include_directories("src/qt")
     file(GLOB GUI_SOURCES "src/qt/*.cpp")
     file(GLOB GUI_RC_SOURCES "src/qt/*.qrc")
     file(GLOB GUI_UI_SOURCES "src/qt/forms/*.ui")
-    qt5_wrap_ui(GUI_GENERATED_HEADERS ${GUI_UI_SOURCES})
+    file(GLOB GUI_TS_SOURCES "src/qt/locale/*.ts")
 
-    set(GUI_SOURCES ${GUI_SOURCES} ${GUI_RC_SOURCES} ${GUI_GENERATED_HEADERS})
-    
+    qt5_wrap_ui(GUI_UI_HEADERS ${GUI_UI_SOURCES})
+    qt5_add_translation(GUI_QM_SOURCES ${GUI_TS_SOURCES})
+        
+    add_custom_target(gen_translations
+	COMMAND ${CMAKE_COMMAND} -E copy ${GUI_QM_SOURCES} "${CMAKE_SOURCE_DIR}/src/qt/locale"
+	DEPENDS ${GUI_QM_SOURCES}
+	COMMENT "Generating translations files"
+    )
+
+    set(GUI_SOURCES ${GUI_SOURCES} ${GUI_RC_SOURCES} ${GUI_UI_HEADERS})
+
+
     if(APPLE)
         set(GUI_SOURCES ${GUI_SOURCES} "src/qt/macdockiconhandler.mm")
     endif()
 
     add_executable(centurion-qt ${CORE_SOURCES} ${GUI_SOURCES})
+    add_dependencies(centurion-qt gen_translations)
     target_link_libraries(centurion-qt ${CORE_LIBS} Qt5::Widgets)
     target_compile_definitions(centurion-qt PRIVATE -DQT_GUI)
 
-    set_target_properties(centurion-qt PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/src/qt"
-    )
 endif(BUILD_GUI)
 
 if(BUILD_TESTS)

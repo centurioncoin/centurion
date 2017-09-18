@@ -540,7 +540,7 @@ Value submitblock(const Array& params, bool fHelp)
     return Value::null;
 }
 
-Value generateBlocks(const CWallet* pwallet, int64_t nGenerate, int64_t nMaxTries)
+Value generateBlocks(CWallet* pwallet, int64_t nGenerate, int64_t nMaxTries)
 {
     int nHeightStart = 0;
     int nHeightEnd = 0;
