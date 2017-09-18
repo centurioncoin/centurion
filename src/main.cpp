@@ -78,6 +78,12 @@ int64_t nMinimumInputValue = 0;
 
 extern enum Checkpoints::CPMode CheckpointsMode;
 
+
+bool IsProtocolV2()
+{
+    return pindexBest->nHeight >= HEIGHT_PROTOCOL_V2;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // dispatching functions
@@ -1046,11 +1052,11 @@ int64_t GetProofOfWorkReward(int64_t nFees)
 
 const int DAILY_BLOCKCOUNT =  1440;
 // miner's coin stake reward based on coin age spent (coin-days) and coin value
-int64_t GetProofOfStakeReward(int64_t nValueResult, int64_t nCoinAge, int64_t nFees)
+int64_t GetProofOfStakeReward(int64_t nCoinAge, int64_t nValueResult, int64_t nFees)
 {
     int64_t nRewardCoinYear;
 
-    if(nValueResult <= 249999 * COIN || pindexBest->nHeight < BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
+    if(nValueResult <= 249999 * COIN || !IsProtocolV2())
         nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE_level1;
     else if(nValueResult <= 499999 * COIN)
         nRewardCoinYear = MAX_MINT_PROOF_OF_STAKE_level2;
@@ -1656,7 +1662,7 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
         if (!vtx[1].GetCoinAgeAndValueStake(txdb, nCoinAge, nCoinStakeValue))
             return error("ConnectBlock() : %s unable to get coin age and value for coinstake", vtx[1].GetHash().ToString().substr(0,10).c_str());
 
-        int64_t nCalculatedStakeReward = GetProofOfStakeReward(nCoinStakeValue, nCoinAge, nFees);
+        int64_t nCalculatedStakeReward = GetProofOfStakeReward(nCoinAge, nCoinStakeValue, nFees);
 
         if (nStakeReward > nCalculatedStakeReward)
             return DoS(100, error("ConnectBlock() : coinstake pays too much(actual=%"PRId64" vs calculated=%"PRId64")", nStakeReward, nCalculatedStakeReward));

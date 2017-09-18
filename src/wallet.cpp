@@ -1720,7 +1720,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         if (!txNew.GetCoinAgeAndValueStake(txdb, nCoinAge, nCoinStakeValue))
             return error("CreateCoinStake : failed to calculate coin age and value");
 
-        int64_t nReward = GetProofOfStakeReward(nCoinStakeValue, nCoinAge, nFees);
+        int64_t nReward = GetProofOfStakeReward(nCoinAge, nCoinStakeValue, nFees);
         if (nReward <= 0)
             return false;
 
