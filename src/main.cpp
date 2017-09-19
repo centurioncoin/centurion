@@ -1027,15 +1027,19 @@ int64_t GetProofOfWorkReward(int64_t nFees)
 
     if(IsProtocolV2())
     {
-        if(pindexBest->nMoneySupply <= 50000000)
+        uint64_t premine = 0;
+        for(int i = 0; i < sizeof(PREMINE_OUTPUT_value)/sizeof(*PREMINE_OUTPUT_value); ++i)
+            premine += PREMINE_OUTPUT_value[i];
+
+        if(pindexBest->nMoneySupply <= 50000000 + premine)
             maxProofOfWork = 100;
-        else if(pindexBest->nMoneySupply <= 75000000)
+        else if(pindexBest->nMoneySupply <= 75000000 + premine)
             maxProofOfWork = 75;
-        else if(pindexBest->nMoneySupply <= 125000000)
+        else if(pindexBest->nMoneySupply <= 125000000 + premine)
             maxProofOfWork = 56.25;
-        else if(pindexBest->nMoneySupply <= 175000000)
+        else if(pindexBest->nMoneySupply <= 175000000 + premine)
             maxProofOfWork = 14.0625;
-        else if(pindexBest->nMoneySupply <= 250000000)
+        else if(pindexBest->nMoneySupply <= 250000000 + premine)
             maxProofOfWork = 7.03125;
         else
             maxProofOfWork = 0;
