@@ -50,6 +50,7 @@ enum
     SER_GETHASH         = (1 << 2),
 
     // modifiers
+    SER_SKIP_NONCE      = (1 << 15),
     SER_SKIPSIG         = (1 << 16),
     SER_BLOCKHEADERONLY = (1 << 17),
 };

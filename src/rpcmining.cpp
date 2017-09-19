@@ -540,7 +540,7 @@ Value submitblock(const Array& params, bool fHelp)
     return Value::null;
 }
 
-Value generateBlocks(CWallet* pwallet, int64_t nGenerate, int64_t nMaxTries)
+Value generateBlocks(const CWallet* pwallet, int64_t nGenerate, int64_t nMaxTries)
 {
     int nHeightStart = 0;
     int nHeightEnd = 0;
@@ -563,22 +563,49 @@ Value generateBlocks(CWallet* pwallet, int64_t nGenerate, int64_t nMaxTries)
         if (!pblock)
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
 
-        pblock->nTime = GetAdjustedTime();
+        pblock->nTime = GetAdjustedTime() + 1;
 
         {
             LOCK(cs_main);
             IncrementExtraNonce(pblock, pindexBest, nExtraNonce);
         }
 
-        while (nMaxTries > 0 && !CheckProofOfWork(pblock->GetHash(), pblock->nBits)) {
-            ++pblock->nNonce;
-            --nMaxTries;
+        CBigNum bnTarget;
+        bnTarget.SetCompact(pblock->nBits);
+
+        while (nMaxTries > 0) {
+            pblock->nNonce++;
+
+            while (pblock->IsEquihash()) {
+                crypto_generichash_blake2b_state state;
+                EhInitialiseState(EQUIHASH_N, EQUIHASH_K, state);
+ 
+                CDataStream ss(SER_NETWORK | SER_SKIP_NONCE, PROTOCOL_VERSION);
+                ss << *pblock;
+                ss << pblock->nNonce;
+
+                crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
+ 
+                if (EhBasicSolveUncancellable(EQUIHASH_N, EQUIHASH_K, state, [&](std::vector<uint8_t> sol) {
+                        pblock->vchSolution = sol;
+                        return true;
+                    }))
+                    break;
+ 
+                pblock->nNonce++;
+            }
+
+            if (pblock->GetHash() <= bnTarget.getuint256())
+                break;
+            
+            nMaxTries--;
         }
+
         if (nMaxTries == 0)
             break;
 
         if (!ProcessBlock(NULL, pblock))
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "generateBlocks, block not accepted");
 
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());

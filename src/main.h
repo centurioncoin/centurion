@@ -13,6 +13,7 @@
 #include "scrypt.h"
 #include "zerocoin/Zerocoin.h"
 #include "hashblock.h"
+#include "equihash.h"
 
 #include <list>
 
@@ -35,7 +36,7 @@ static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
 static const unsigned int MAX_INV_SZ = 50000;
-static const int64_t MIN_TX_FEE = 1000;
+static const int64_t MIN_TX_FEE = 1500;
 static const int64_t MIN_RELAY_TX_FEE = MIN_TX_FEE;
 static const int64_t MAX_MONEY = 250000000  * COIN;
 static const int64_t COIN_YEAR_REWARD = 5 * CENT; // 3% per year
@@ -46,6 +47,12 @@ static const int64_t MAX_MINT_PROOF_OF_STAKE_level4 = 10 * COIN;
 static const int64_t MAX_MINT_PROOF_OF_STAKE_level5 = 15 * COIN;
 
 static const int MODIFIER_INTERVAL_SWITCH = 2000;
+
+// Equihash params
+// uint32_t EQUIHASH_N = 200;
+// uint32_t EQUIHASH_K = 9;
+static uint32_t EQUIHASH_N = 48;
+static uint32_t EQUIHASH_K = 5;
 
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 // Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp.
@@ -849,13 +856,18 @@ class CBlock
 {
 public:
     // header
-    static const int CURRENT_VERSION=6;
+    static const int CURRENT_VERSION = 6;
+    static const int EQUIHASH_VERSION = 7;
+
     int nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
     unsigned int nTime;
     unsigned int nBits;
     unsigned int nNonce;
+
+    // Equihash
+    std::vector<uint8_t> vchSolution;
 
     // network and disk
     std::vector<CTransaction> vtx;
@@ -883,7 +895,12 @@ public:
         READWRITE(hashMerkleRoot);
         READWRITE(nTime);
         READWRITE(nBits);
-        READWRITE(nNonce);
+
+        if (!(nType & SER_SKIP_NONCE)) {
+            READWRITE(nNonce);
+            if (IsEquihash())
+                READWRITE(vchSolution);
+        }
 
         // ConnectBlock depends on vtx following header to generate CDiskTxPos
         if (!(nType & (SER_GETHASH|SER_BLOCKHEADERONLY)))
@@ -910,6 +927,8 @@ public:
         vchBlockSig.clear();
         vMerkleTree.clear();
         nDoS = 0;
+
+        vchSolution.clear();
     }
 
     bool IsNull() const
@@ -919,7 +938,10 @@ public:
 
     uint256 GetHash() const
     {
-        return Hash9(BEGIN(nVersion), END(nNonce));
+        return IsEquihash()
+            // ? Hash9(BEGIN(nVersion), END(vchSolution))
+            ? SerializeHash(*this)
+            : Hash9(BEGIN(nVersion), END(nNonce));
     }
 
     int64_t GetBlockTime() const
@@ -948,6 +970,11 @@ public:
     bool IsProofOfWork() const
     {
         return !IsProofOfStake();
+    }
+
+    bool IsEquihash() const
+    {
+        return nVersion == CBlock::EQUIHASH_VERSION;
     }
 
     std::pair<COutPoint, unsigned int> GetProofOfStake() const
@@ -1148,6 +1175,9 @@ public:
     unsigned int nStakeTime;
     uint256 hashProofOfStake;
 
+    // Equihash
+    std::vector<uint8_t> vchSolution;
+
     // block header
     int nVersion;
     uint256 hashMerkleRoot;
@@ -1178,6 +1208,8 @@ public:
         nTime          = 0;
         nBits          = 0;
         nNonce         = 0;
+        
+        vchSolution.clear();
     }
 
     CBlockIndex(unsigned int nFileIn, unsigned int nBlockPosIn, CBlock& block)
@@ -1212,6 +1244,8 @@ public:
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
+
+        vchSolution    = block.vchSolution;
     }
 
     CBlock GetBlockHeader() const
@@ -1224,6 +1258,9 @@ public:
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
+
+        block.vchSolution    = vchSolution;
+
         return block;
     }
 
@@ -1298,6 +1335,11 @@ public:
     bool IsProofOfStake() const
     {
         return (nFlags & BLOCK_PROOF_OF_STAKE);
+    }
+
+    bool IsEquihash() const
+    {
+        return nVersion == CBlock::EQUIHASH_VERSION;
     }
 
     void SetProofOfStake()
@@ -1407,6 +1449,10 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+
+        if (IsEquihash())
+            READWRITE(vchSolution);
+
         READWRITE(blockHash);
     )
 
@@ -1422,6 +1468,8 @@ public:
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;
+
+        block.vchSolution     = vchSolution;
 
         const_cast<CDiskBlockIndex*>(this)->blockHash = block.GetHash();
 
