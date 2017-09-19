@@ -9,6 +9,23 @@
 #include "main.h"
 #include "wallet.h"
 
+static const uint32_t PREMINE_HEIGHT = 3;
+static const uint32_t PREMINE_OUTPUT_length = 5;
+static const uint64_t PREMINE_OUTPUT_value[] = {
+    500000000 * COIN,
+    100000000 * COIN,
+     50000000 * COIN,
+     25000000 * COIN,
+     25000000 * COIN,
+};
+static const char PREMINE_OUTPUT_address[][35] = {
+    "CQUESEK7vV5fgnKSeLndS8PELGbe4Md5ye",
+    "CKtdTWW9qxMYnPoDrtGA96ajkJaj5hXzf4",
+    "CUWXgagZHEApTMv6VKbjHZNUeSC972CHp5",
+    "CcGQHf4ufcQWaXPKQEHFPkkG33bEM1CtLJ",
+    "CX2cYTrYCXEzEzeg8ktMRd92x7GxW3XpFU",
+};
+
 /* Generate a new block, without valid proof-of-work */
 CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake=false, int64_t* pFees = 0);
 
