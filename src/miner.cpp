@@ -120,7 +120,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
     CBlockIndex* pindexPrev = pindexBest;
 
     const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
-    bool take_third = address.IsValid() && pindexBest->nHeight >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL;
+    bool take_third = address.IsValid() && IsProtocolV2();
 
     // Create coinbase tx
     CTransaction txNew;
@@ -414,7 +414,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
         pblock->nNonce         = 0;
 
         // Equihash block type
-        if (pindexPrev->nHeight + 1 >= BLOCK_HEIGHT_FOR_NEW_PROTOCOL)
+        if (pindexPrev->nHeight + 1 >= HEIGHT_PROTOCOL_V2)
             pblock->nVersion = CBlock::EQUIHASH_VERSION;
     }
 
