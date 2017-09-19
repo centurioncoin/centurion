@@ -18,7 +18,7 @@ find_package(OpenSSL REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS} ${OpenSSL_INCLUDE_DIRS} ${Miniupnpc_INCLUDE_DIRS})
 link_directories("src/leveldb")
 set(CORE_LIBS
-    leveldb memenv rt db_cxx miniupnpc qrencode
+    leveldb memenv rt db_cxx miniupnpc qrencode sodium
     Boost::system Boost::filesystem Boost::program_options Boost::thread 
     ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY}
 )
