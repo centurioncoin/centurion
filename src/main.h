@@ -29,7 +29,7 @@ class CRequestTracker;
 class CNode;
 
 static const int LAST_POW_BLOCK = 19000000;
-static const unsigned int BLOCK_HEIGHT_FOR_NEW_PROTOCOL = 300000; //block height for activate new functionality
+static const int HEIGHT_PROTOCOL_V2 = 700000; //block height for activate new functionality
 static const unsigned int MAX_BLOCK_SIZE = 2000000;
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
@@ -128,7 +128,7 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
 void StakeMiner(CWallet *pwallet);
 void ResendWalletTransactions(bool fForce = false);
 
-
+bool IsProtocolV2();
 
 
 

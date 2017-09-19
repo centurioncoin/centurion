@@ -78,6 +78,12 @@ int64_t nMinimumInputValue = 0;
 
 extern enum Checkpoints::CPMode CheckpointsMode;
 
+
+bool IsProtocolV2()
+{
+    return pindexBest->nHeight >= HEIGHT_PROTOCOL_V2;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // dispatching functions
