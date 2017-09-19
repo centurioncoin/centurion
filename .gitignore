@@ -6,3 +6,4 @@ build/
 *.qm
 /Makefile
 centurion-qt
+test_centurion
