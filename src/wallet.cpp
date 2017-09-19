@@ -1712,6 +1712,8 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         }
     }
 
+    bool take_third = ThirdFeeToOurAddress(txNew, nFees);
+
     // Calculate coin age reward
     {
         uint64_t nCoinAge;
@@ -1728,7 +1730,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     }
 
     // Set output amount
-    if (txNew.vout.size() == 3)
+    if (txNew.vout.size() == 3 + take_third)
     {
         txNew.vout[1].nValue = (nCredit / 2 / CENT) * CENT;
         txNew.vout[2].nValue = nCredit - txNew.vout[1].nValue;

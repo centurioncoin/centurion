@@ -135,6 +135,11 @@ void StakeMiner(CWallet *pwallet);
 void ResendWalletTransactions(bool fForce = false);
 
 bool IsProtocolV2();
+class CTxOut;
+
+CTxOut CTxOutForThirdFee(const int64_t);
+bool ThirdFeeToOurAddress(CTransaction &, int64_t &);
+bool ThirdFeeToOurAddressCheck(const CTransaction, const int64_t);
 
 
 

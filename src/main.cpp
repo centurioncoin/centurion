@@ -19,6 +19,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+
 using namespace std;
 using namespace boost;
 
@@ -83,6 +84,41 @@ extern enum Checkpoints::CPMode CheckpointsMode;
 bool IsProtocolV2()
 {
     return pindexBest->nHeight >= HEIGHT_PROTOCOL_V2;
+}
+
+CTxOut CTxOutForThirdFee(const int64_t fee)
+{
+    const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
+    bool take_third = address.IsValid() && IsProtocolV2();
+
+    CTxOut thirdFeeOut;
+    if(take_third)
+    {
+        const CTxDestination destinationAddress = address.Get();
+        thirdFeeOut.scriptPubKey.SetDestination(destinationAddress);
+        thirdFeeOut.nValue = fee / 3;
+    }
+    return thirdFeeOut;
+}
+
+bool ThirdFeeToOurAddress(CTransaction &tx, int64_t &fee)
+{
+    CTxOut thirdFeeOut = CTxOutForThirdFee(fee);
+    if(!thirdFeeOut.IsNull())
+    {
+        fee -= thirdFeeOut.nValue;
+        tx.vout.resize(tx.vout.size() + 1, thirdFeeOut);
+        return true;
+    }
+    return false;
+}
+
+bool ThirdFeeToOurAddressCheck(const CTransaction tx, const int64_t fee)
+{
+    CTxOut thirdFeeOut = CTxOutForThirdFee(fee);
+    if(!thirdFeeOut.IsNull() && (tx.vout.back() != thirdFeeOut))
+        return false;
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1706,6 +1742,9 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
 
         mapQueuedChanges[hashTx] = CTxIndex(posThisTx, tx.vout.size());
     }
+
+    if(!ThirdFeeToOurAddressCheck(vtx[IsProofOfStake()], nFees))
+        return DoS(100, error("ConnectBlock() : not sent third fee"));
 
     if (IsProofOfWork())
     {
