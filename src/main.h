@@ -30,7 +30,7 @@ class CRequestTracker;
 class CNode;
 
 static const int LAST_POW_BLOCK = 19000000;
-static const int BLOCK_HEIGHT_FOR_NEW_PROTOCOL = 4; //block height for activate new functionality
+static const int BLOCK_HEIGHT_FOR_NEW_PROTOCOL = 700000; //block height for activate new functionality
 static const unsigned int MAX_BLOCK_SIZE = 2000000;
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
