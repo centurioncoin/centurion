@@ -119,9 +119,6 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
 
     CBlockIndex* pindexPrev = pindexBest;
 
-    const CBitcoinAddress address("CVBy4fjyzT2jHzqGaXDXiZSB8dfKa5dobx");
-    bool take_third = address.IsValid() && IsProtocolV2();
-
     // Create coinbase tx
     CTransaction txNew;
     txNew.vin.resize(1);

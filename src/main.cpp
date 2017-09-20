@@ -1062,19 +1062,16 @@ int64_t GetProofOfWorkReward(int64_t nFees)
 
     if(IsProtocolV2())
     {
-        uint64_t premine = 0;
-        for(int i = 0; i < sizeof(PREMINE_OUTPUT_value)/sizeof(*PREMINE_OUTPUT_value); ++i)
-            premine += PREMINE_OUTPUT_value[i];
-
-        if(pindexBest->nMoneySupply <= 50000000 + premine)
+        uint64_t premine = GetAllPremine();
+        if(pindexBest->nMoneySupply <= (50000000 * COIN) + premine)
             maxProofOfWork = 100;
-        else if(pindexBest->nMoneySupply <= 75000000 + premine)
+        else if(pindexBest->nMoneySupply <= (75000000 * COIN) + premine)
             maxProofOfWork = 75;
-        else if(pindexBest->nMoneySupply <= 125000000 + premine)
+        else if(pindexBest->nMoneySupply <= (125000000 * COIN) + premine)
             maxProofOfWork = 56.25;
-        else if(pindexBest->nMoneySupply <= 175000000 + premine)
+        else if(pindexBest->nMoneySupply <= (175000000 * COIN) + premine)
             maxProofOfWork = 14.0625;
-        else if(pindexBest->nMoneySupply <= 250000000 + premine)
+        else if(pindexBest->nMoneySupply <= (250000000 * COIN) + premine)
             maxProofOfWork = 7.03125;
         else
             maxProofOfWork = 0;
@@ -1148,7 +1145,7 @@ int64_t GetProofOfWorkReward(int64_t nFees)
     if (fDebug && GetBoolArg("-printcreation", false))
         printf("GetProofOfWorkReward() : create=%s nBits=0x%08x nSubsidy=%lld\n", FormatMoney(nSubsidy), nBits, nSubsidy);
 
-    return std::min(nSubsidy + nFees, maxProofOfWork);
+    return std::min(nSubsidy, maxProofOfWork) + nFees;
 }
 
 const int DAILY_BLOCKCOUNT =  1440;
@@ -1777,7 +1774,12 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
     {
         int64_t nReward = GetProofOfWorkReward(nFees);
         // Check coinbase reward
-        if (vtx[0].GetValueOut() > nReward && pindex->nHeight != PREMINE_HEIGHT)
+        if(pindex->nHeight == PREMINE_HEIGHT)
+        {
+            uint64_t premine = GetAllPremine();
+            nReward += premine;
+        }
+        if (vtx[0].GetValueOut() > nReward)
             return DoS(50, error("ConnectBlock() : coinbase reward exceeded (actual=%"PRId64" vs calculated=%"PRId64")",
                    vtx[0].GetValueOut(),
                    nReward));
