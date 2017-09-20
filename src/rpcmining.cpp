@@ -540,7 +540,7 @@ Value submitblock(const Array& params, bool fHelp)
     return Value::null;
 }
 
-Value generateBlocks(CWallet* pwallet, int64_t nGenerate, int64_t nMaxTries)
+Value generateBlocks(CWallet* pwallet, int64_t nGenerate, uint64_t nMaxTries)
 {
     int nHeightStart = 0;
     int nHeightEnd = 0;
@@ -574,6 +574,7 @@ Value generateBlocks(CWallet* pwallet, int64_t nGenerate, int64_t nMaxTries)
         bnTarget.SetCompact(pblock->nBits);
 
         while (nMaxTries > 0) {
+            pblock->nTime = GetAdjustedTime() + 1;
             pblock->nNonce++;
 
             while (pblock->IsEquihash()) {
@@ -627,7 +628,7 @@ Value generate(const Array& params, bool fHelp)
         );
 
     int64_t nGenerate = params[0].get_int();
-    int64_t nMaxTries = 1000000;
+    uint64_t nMaxTries = 1000000;
     if (params.size() > 1) {
         nMaxTries = params[1].get_int();
     }

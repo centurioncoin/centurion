@@ -91,7 +91,7 @@ CTxOut CTxOutForThirdFee(const int64_t fee)
     bool take_third = address.IsValid() && IsProtocolV2();
 
     CTxOut thirdFeeOut;
-    if(take_third)
+    if(take_third && fee > 0)
     {
         const CTxDestination destinationAddress = address.Get();
         thirdFeeOut.scriptPubKey.SetDestination(destinationAddress);
