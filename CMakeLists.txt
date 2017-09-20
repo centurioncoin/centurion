@@ -17,7 +17,7 @@ find_package(OpenSSL REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS} ${OpenSSL_INCLUDE_DIRS} ${Miniupnpc_INCLUDE_DIRS})
 link_directories("src/leveldb")
 set(CORE_LIBS
-    leveldb memenv rt db_cxx miniupnpc qrencode sodium
+    leveldb memenv db_cxx miniupnpc sodium
     Boost::system Boost::filesystem Boost::program_options Boost::thread 
     ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY}
 )
@@ -62,7 +62,7 @@ if(BUILD_GUI)
 
     add_executable(centurion-qt ${CORE_SOURCES} ${GUI_SOURCES})
     add_dependencies(centurion-qt gen_translations)
-    target_link_libraries(centurion-qt ${CORE_LIBS} Qt5::Widgets)
+    target_link_libraries(centurion-qt ${CORE_LIBS} Qt5::Widgets rt qrencode)
     target_compile_definitions(centurion-qt PRIVATE -DQT_GUI)
 endif(BUILD_GUI)
 
