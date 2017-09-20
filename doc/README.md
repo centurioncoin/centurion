@@ -47,8 +47,9 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 | libdb4.8 | Wallet storage |
 
 Optional GUI dependencies:
+
 | Library | Decription |
 | --- | --- |
-| Qt5 | GUI toolkit  |
+| Qt5 | GUI toolkit |
 | libqrencode | Generate QR codes |
-| rt | |
+| librt ||
