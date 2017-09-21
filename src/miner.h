@@ -44,4 +44,11 @@ bool CheckStake(CBlock* pblock, CWallet& wallet);
 /** Base sha256 mining transform */
 void SHA256Transform(void* pstate, void* pinput, const void* pinit);
 
+inline uint64_t GetAllPremine() {
+    uint64_t premine = 0;
+    for(int i = 0; i < sizeof(PREMINE_OUTPUT_value)/sizeof(*PREMINE_OUTPUT_value); ++i)
+        premine += PREMINE_OUTPUT_value[i];
+    return premine;
+}
+
 #endif // NOVACOIN_MINER_H
