@@ -1148,7 +1148,7 @@ int64_t GetProofOfWorkReward(int64_t nFees)
     if (fDebug && GetBoolArg("-printcreation", false))
         printf("GetProofOfWorkReward() : create=%s nBits=0x%08x nSubsidy=%lld\n", FormatMoney(nSubsidy), nBits, nSubsidy);
 
-    return std::min(nSubsidy + nFees, maxProofOfWork);
+    return std::min(nSubsidy, maxProofOfWork) + nFees;
 }
 
 const int DAILY_BLOCKCOUNT =  1440;
@@ -2231,7 +2231,7 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig) c
         return DoS(100, error("CheckBlock() : size limits failed"));
 
     // Check Equihash solution
-    if (IsEquihash() && !CheckEquihashSolution(this))
+    if (IsProofOfWork() && IsEquihash() && !CheckEquihashSolution(this))
         return DoS(50, error("CheckBlock() : wrong equihash solution"));
 
     // Check proof of work matches claimed amount

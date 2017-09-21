@@ -856,7 +856,7 @@ class CBlock
 {
 public:
     // header
-    static const int CURRENT_VERSION = 6;
+    static const int CURRENT_VERSION = 7;
     static const int EQUIHASH_VERSION = 7;
 
     int nVersion;
