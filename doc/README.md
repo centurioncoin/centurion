@@ -17,6 +17,14 @@ help further advance the field of crypto-currency.
 
 ## To Build
 
+Build local LevelDB:
+```
+cd src/leveldb
+make
+cd ../..
+```
+
+Build Centurion:
 ```
 cd build
 cmake ..
@@ -53,3 +61,24 @@ Optional GUI dependencies:
 | Qt5 | GUI toolkit |
 | libqrencode | Generate QR codes |
 | librt ||
+
+## Windows cross-compilation
+MXE (M cross environment) setup instructions and packages can be found at http://pkg.mxe.cc.
+
+Existing MXE binary packages:
+- boost
+- openssl
+- miniupnpc
+- libsodium
+- qt qtbase qttools
+
+Other deps are built with scripts:
+- `build_db4.8_mxe.sh`
+- `build_qrencode_mxe.sh`
+- `build_leveldb_mxe.sh`
+
+```
+cd build
+/usr/lib/mxe/usr/bin/i686-w64-mingw32.static-cmake ..
+make
+```

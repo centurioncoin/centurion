@@ -7,21 +7,27 @@ option(BUILD_GUI "Build GUI" ON)
 option(BUILD_TESTS "Build tests" ON)
 
 set(CMAKE_CXX_STANDARD 11)
-
 set(Boost_USE_STATIC_LIBS   ON)
 set(Boost_USE_MULTITHREADED ON)
 
+# Core libs
 find_package(Boost REQUIRED COMPONENTS system filesystem program_options thread)
 find_package(OpenSSL REQUIRED)
+find_package(ZLIB REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS} ${OpenSSL_INCLUDE_DIRS} ${Miniupnpc_INCLUDE_DIRS})
 link_directories("src/leveldb")
 set(CORE_LIBS
     leveldb memenv db_cxx miniupnpc sodium
     Boost::system Boost::filesystem Boost::program_options Boost::thread 
-    ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY}
+    ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES}
 )
 
+if(MSYS)
+    list(APPEND CORE_LIBS wsock32 ws2_32 shlwapi)
+endif()
+
+# Core sources
 include_directories("src" "src/json" "src/leveldb/include" "src/leveldb/helpers")
 aux_source_directory("src" CORE_SOURCES)
 aux_source_directory("src/zerocoin" ZEROCOIN_SOURCES)
@@ -37,6 +43,26 @@ if(BUILD_GUI)
 
     find_package(Qt5Widgets REQUIRED)
     find_package(Qt5LinguistTools REQUIRED)
+    set(GUI_LIBS qrencode)
+
+    include_directories(${Qt5Widgets_INCLUDE_DIRS})
+
+    if(UNIX)
+        list(APPEND GUI_LIBS Qt5::Widgets rt)
+    endif()
+
+    if(MSYS)
+        # MXE workaround: Use pkg-config to find Qt5 libs.
+        # https://github.com/mxe/mxe/issues/1642
+        find_package(PkgConfig)
+        pkg_check_modules(QT5ALL REQUIRED Qt5Widgets)
+
+        list(APPEND GUI_LIBS Qt5::QWindowsIntegrationPlugin)
+        list(APPEND GUI_LIBS ${QT5ALL_LDFLAGS})
+        
+        # Qt5 platform support libs
+        list(APPEND GUI_LIBS Qt5EventDispatcherSupport Qt5AccessibilitySupport Qt5FontDatabaseSupport Qt5ThemeSupport freetype bz2 harfbuzz)
+    endif()
 
     include_directories("src/qt")
     file(GLOB GUI_SOURCES "src/qt/*.cpp")
@@ -55,25 +81,31 @@ if(BUILD_GUI)
 
     set(GUI_SOURCES ${GUI_SOURCES} ${GUI_RC_SOURCES} ${GUI_UI_HEADERS})
 
-
     if(APPLE)
-        set(GUI_SOURCES ${GUI_SOURCES} "src/qt/macdockiconhandler.mm")
+        list(APPEND GUI_SOURCES "src/qt/macdockiconhandler.mm")
     endif()
-
+    
     add_executable(centurion-qt ${CORE_SOURCES} ${GUI_SOURCES})
     add_dependencies(centurion-qt gen_translations)
-    target_link_libraries(centurion-qt ${CORE_LIBS} Qt5::Widgets rt qrencode)
+    target_link_libraries(centurion-qt ${CORE_LIBS} ${GUI_LIBS})
     target_compile_definitions(centurion-qt PRIVATE -DQT_GUI)
+
+    if(MSYS)
+        target_compile_definitions(centurion-qt PRIVATE -DQT_STATICPLUGIN)
+    endif()
 endif(BUILD_GUI)
 
 if(BUILD_TESTS)
     find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+    set(TEST_LIBS ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+    if(MSYS)
+        list(APPEND TEST_LIBS iphlpapi)
+    endif()
 
     aux_source_directory("src/test" TEST_SOURCES)
-    # set(TEST_SOURCES "src/test/test_bitcoin.cpp") # only main file for testing
 
     add_executable(test_centurion ${CORE_SOURCES} ${TEST_SOURCES})
-    target_link_libraries(test_centurion ${CORE_LIBS} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+    target_link_libraries(test_centurion ${CORE_LIBS} ${TEST_LIBS})
     target_compile_definitions(test_centurion PRIVATE -DBUILD_TESTS)
 
     set_target_properties(test_centurion PROPERTIES
