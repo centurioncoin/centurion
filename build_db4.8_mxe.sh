@@ -6,6 +6,7 @@ cd /tmp/build_db4.8_mxe
 wget -c http://download.oracle.com/berkeley-db/db-4.8.30.tar.gz
 tar zxvf db-4.8.30.tar.gz
 
+cd db-4.8.30
 cd build_unix
 
 export PATH=/usr/lib/mxe/usr/bin:$PATH
