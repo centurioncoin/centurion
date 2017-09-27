@@ -665,6 +665,7 @@ std::unique_ptr<CBlock> generatePowBlock(CWallet *pwallet, uint64_t& nMaxTries, 
                 break;
 
             pblock->nNonce++;
+            boost::this_thread::interruption_point();
         }
 
         nMaxTries -= 1;

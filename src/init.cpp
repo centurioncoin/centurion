@@ -26,6 +26,8 @@
 using namespace std;
 using namespace boost;
 
+extern boost::thread powMiningThread;
+
 CWallet* pwalletMain;
 CClientUIInterface uiInterface;
 std::string strWalletFileName;
@@ -86,6 +88,7 @@ void Shutdown(void* parg)
     {
         fShutdown = true;
         nTransactionsUpdated++;
+        powMiningThread.interrupt();
 //        CTxDB().Close();
         bitdb.Flush(false);
         StopNode();
