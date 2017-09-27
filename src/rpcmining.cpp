@@ -15,6 +15,9 @@ using namespace std;
 
 extern unsigned int nTargetSpacing;
 
+extern bool fRunPowMiningThread;
+extern boost::thread powMiningThread;
+
 Value getsubsidy(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -640,4 +643,33 @@ Value generate(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "No coinbase script available (mining requires a wallet)");
 
     return generateBlocks(pwalletMain, nGenerate, nMaxTries);
+}
+
+
+Value setgenerate(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "setgenerate flag\n"
+            "\nStart or stop pow-mining thread\n"
+            "\nArguments:\n"
+            "1. flag (boolean, required) Generate or not blocks in background.\n"
+        );
+
+    bool fGenerate = params[0].get_bool();
+
+    if (fGenerate)
+    {
+        fRunPowMiningThread = true;
+        if (!powMiningThread.joinable())
+            powMiningThread = boost::thread(ProofOfWorkMiner, pwalletMain);
+    }
+    else
+    {
+        fRunPowMiningThread = false;
+        powMiningThread.join();
+        powMiningThread.detach();
+    }
+
+    return Value::null;
 }

@@ -307,6 +307,7 @@ static const CRPCCommand vRPCCommands[] =
     { "makekeypair",            &makekeypair,            false,  true},
     { "sendalert",              &sendalert,              false,  false},
     { "generate",               &generate,               false,  false},
+    { "setgenerate",            &setgenerate,            false,  false},
 };
 
 CRPCTable::CRPCTable()
@@ -1237,6 +1238,8 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
 
     if (strMethod == "generate"               && n > 0) ConvertTo<uint64_t>(params[0]);
     if (strMethod == "generate"               && n > 1) ConvertTo<int64_t>(params[1]);
+
+    if (strMethod == "setgenerate"            && n > 0) ConvertTo<bool>(params[0]);
 
     return params;
 }

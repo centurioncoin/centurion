@@ -51,4 +51,6 @@ inline uint64_t GetAllPremine() {
     return premine;
 }
 
+bool ProofOfWorkMiner(CWallet *pwallet);
+
 #endif // NOVACOIN_MINER_H
