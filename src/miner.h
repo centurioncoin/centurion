@@ -51,6 +51,8 @@ inline uint64_t GetAllPremine() {
     return premine;
 }
 
+std::shared_ptr<CBlock> generatePowBlock(CWallet *pwallet, uint64_t& nMaxTries, std::function<bool ()> fnContinue);
+
 bool ProofOfWorkMiner(CWallet *pwallet);
 
 #endif // NOVACOIN_MINER_H

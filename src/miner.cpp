@@ -619,68 +619,86 @@ void StakeMiner(CWallet *pwallet)
     }
 }
 
+std::shared_ptr<CBlock> generatePowBlock(CWallet *pwallet, uint64_t& nMaxTries, std::function<bool ()> fnContinue)
+{
+    static uint32_t nExtraNonce = 0;
+    
+    std::shared_ptr<CBlock> spblock(CreateNewBlock(pwallet, false));
+    CBlock* pblock = spblock.get();
+    if (!pblock)
+    {
+        error("generatePowBlock: Cannot create block");
+        return std::shared_ptr<CBlock>();
+    }
+
+    {
+        LOCK(cs_main);
+        IncrementExtraNonce(pblock, pindexBest, nExtraNonce);
+    }
+        
+    CBigNum bnTarget;
+    bnTarget.SetCompact(pblock->nBits);
+    
+    while (fnContinue() && !fShutdown)
+    {
+        pblock->nTime = GetAdjustedTime() + 1;
+        pblock->nNonce++;
+
+        while (pblock->IsEquihash())
+        {
+            crypto_generichash_blake2b_state state;
+            EhInitialiseState(EQUIHASH_N, EQUIHASH_K, state);
+
+            CDataStream ss(SER_NETWORK | SER_SKIP_NONCE, PROTOCOL_VERSION);
+            ss << *pblock;
+            ss << pblock->nNonce;
+
+            crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
+
+            if (EhBasicSolveUncancellable(EQUIHASH_N, EQUIHASH_K, state, [&pblock](std::vector<uint8_t> sol) {
+                    pblock->vchSolution = sol;
+                    return true;
+                }))
+                break;
+
+            pblock->nNonce++;
+        }
+
+        nMaxTries -= 1;
+        if (pblock->GetHash() <= bnTarget.getuint256())
+            break;
+    }
+
+    if (!fnContinue() || fShutdown)
+        return std::shared_ptr<CBlock>();
+
+    {
+        LOCK(cs_main);
+        if (pblock->hashPrevBlock != hashBestChain)
+        {
+            error("generatePowBlock: generated block is stale");
+            return std::shared_ptr<CBlock>();
+        }
+
+        if (!ProcessBlock(NULL, pblock))
+        {
+            error("generatePowBlock: block not accepted");
+            return std::shared_ptr<CBlock>();
+        }
+    }
+
+    return spblock;
+}
+
 bool ProofOfWorkMiner(CWallet *pwallet)
 {
     RenameThread("centurion-pow-miner");
 
-    uint32_t nExtraNonce = 0;
+    uint64_t nMaxTries = -1;
 
     while (fRunPowMiningThread && !fShutdown)
     {
-        std::shared_ptr<CBlock> spblock(CreateNewBlock(pwallet, false));
-        CBlock* pblock = spblock.get();
-        if (!pblock)
-            return error("ProofOfWorkMiner: Cannot create block");
-
-        {
-            LOCK(cs_main);
-            IncrementExtraNonce(pblock, pindexBest, nExtraNonce);
-        }
-            
-        CBigNum bnTarget;
-        bnTarget.SetCompact(pblock->nBits);
-        
-        while (fRunPowMiningThread && !fShutdown)
-        {
-            pblock->nTime = GetAdjustedTime() + 1;
-            pblock->nNonce++;
-
-            while (pblock->IsEquihash())
-            {
-                crypto_generichash_blake2b_state state;
-                EhInitialiseState(EQUIHASH_N, EQUIHASH_K, state);
- 
-                CDataStream ss(SER_NETWORK | SER_SKIP_NONCE, PROTOCOL_VERSION);
-                ss << *pblock;
-                ss << pblock->nNonce;
-
-                crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
- 
-                if (EhBasicSolveUncancellable(EQUIHASH_N, EQUIHASH_K, state, [&pblock](std::vector<uint8_t> sol) {
-                        pblock->vchSolution = sol;
-                        return true;
-                    }))
-                    break;
- 
-                pblock->nNonce++;
-            }
-
-            if (pblock->GetHash() <= bnTarget.getuint256())
-                break;
-        }
-
-        if (fRunPowMiningThread && !fShutdown)
-        {
-            LOCK(cs_main);
-            if (pblock->hashPrevBlock != hashBestChain)
-            {
-                error("ProofOfWorkMiner: generated block is stale");
-                continue;
-            }
-    
-            if (!ProcessBlock(NULL, pblock))
-                error("ProofOfWorkMiner: block not accepted");
-        }
+        generatePowBlock(pwallet, nMaxTries, [&fRunPowMiningThread]() { return fRunPowMiningThread; });
     }
 
     printf("ProofOfWorkMiner: stopping\n");
