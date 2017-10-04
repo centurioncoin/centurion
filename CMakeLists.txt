@@ -47,6 +47,9 @@ if(BUILD_GUI)
 
     include_directories(${Qt5Widgets_INCLUDE_DIRS})
 
+    if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mwindows")
+    endif()
     if(UNIX)
         list(APPEND GUI_LIBS Qt5::Widgets rt)
     endif()
