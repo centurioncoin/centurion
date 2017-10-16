@@ -125,7 +125,7 @@ bool ProcessMessages(CNode* pfrom);
 bool SendMessages(CNode* pto, bool fSendTrickle);
 bool LoadExternalBlockFile(FILE* fileIn);
 
-bool CheckProofOfWork(uint256 hash, unsigned int nBits);
+bool CheckProofOfWork(uint256 hash, unsigned int nBits, bool protocolV2);
 unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake);
 int64_t GetProofOfWorkReward(int64_t nFees);
 int64_t GetProofOfStakeReward(int64_t nCoinAge, int64_t nCoinStakeValue, int64_t nFees);
@@ -1088,7 +1088,7 @@ public:
         }
 
         // Check the header
-        if (fReadTransactions && IsProofOfWork() && !CheckProofOfWork(GetHash(), nBits))
+        if (fReadTransactions && IsProofOfWork() && !CheckProofOfWork(GetHash(), nBits, IsEquihash()))
             return error("CBlock::ReadFromDisk() : errors in block header");
 
         return true;
