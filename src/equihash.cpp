@@ -694,7 +694,7 @@ template<unsigned int N, unsigned int K>
 bool Equihash<N,K>::IsValidSolution(const eh_HashState& base_state, std::vector<unsigned char> soln)
 {
     if (soln.size() != SolutionWidth) {
-        return error("IsValidSolution: Invalid solution length: %d (expected %d)", soln.size(), SolutionWidth);
+        return error("IsValidSolution: Invalid solution length: %ld (expected %ld)", soln.size(), SolutionWidth);
     }
 
     std::vector<FullStepRow<FinalFullWidth>> X;
