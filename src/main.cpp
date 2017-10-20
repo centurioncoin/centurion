@@ -1263,7 +1263,7 @@ bool CheckEquihashSolution(const CBlock *pblock)
     crypto_generichash_blake2b_state state;
     EhInitialiseState(EQUIHASH_N, EQUIHASH_K, state);
 
-    CDataStream ss(SER_NETWORK | SER_SKIP_NONCE, PROTOCOL_VERSION);
+    CDataStream ss(SER_NETWORK | SER_SKIP_NONCE | SER_BLOCKHEADERONLY, PROTOCOL_VERSION);
     ss << *pblock;
     ss << pblock->nNonce;
 
