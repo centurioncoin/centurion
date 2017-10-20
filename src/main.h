@@ -51,7 +51,7 @@ static const int MODIFIER_INTERVAL_SWITCH = 2000;
 // Equihash params
 // uint32_t EQUIHASH_N = 200;
 // uint32_t EQUIHASH_K = 9;
-static uint32_t EQUIHASH_N = 48;
+static uint32_t EQUIHASH_N = 96;
 static uint32_t EQUIHASH_K = 5;
 
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
