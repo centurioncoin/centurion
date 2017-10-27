@@ -7,8 +7,7 @@ option(BUILD_GUI "Build GUI" ON)
 option(BUILD_TESTS "Build tests" ON)
 
 set(CMAKE_CXX_STANDARD 11)
-set(Boost_USE_STATIC_LIBS   ON)
-set(Boost_USE_MULTITHREADED ON)
+add_definitions(-DBOOST_SPIRIT_THREADSAFE -DBOOST_THREAD_USE_LIB)
 
 # Core libs
 find_package(Boost REQUIRED COMPONENTS system filesystem program_options thread)
