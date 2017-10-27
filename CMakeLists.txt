@@ -13,13 +13,13 @@ add_definitions(-DBOOST_SPIRIT_THREADSAFE -DBOOST_THREAD_USE_LIB)
 find_package(Boost REQUIRED COMPONENTS system filesystem program_options thread)
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
+set(LEVELDB_LIBS "${CMAKE_SOURCE_DIR}/src/leveldb/libleveldb.a" "${CMAKE_SOURCE_DIR}/src/leveldb/libmemenv.a")
 
 include_directories(${Boost_INCLUDE_DIRS} ${OpenSSL_INCLUDE_DIRS} ${Miniupnpc_INCLUDE_DIRS})
-link_directories("src/leveldb")
 set(CORE_LIBS
-    leveldb memenv db_cxx miniupnpc sodium
+    db_cxx miniupnpc sodium
     Boost::system Boost::filesystem Boost::program_options Boost::thread 
-    ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES}
+    ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${LEVELDB_LIBS}
 )
 
 if(MSYS)
@@ -108,7 +108,7 @@ if(BUILD_TESTS)
 
     add_executable(test_centurion ${CORE_SOURCES} ${TEST_SOURCES})
     target_link_libraries(test_centurion ${CORE_LIBS} ${TEST_LIBS})
-    target_compile_definitions(test_centurion PRIVATE -DBUILD_TESTS)
+    target_compile_definitions(test_centurion PRIVATE -DBUILD_TESTS -DBOOST_ALL_NO_LIB -DBOOST_ALL_DYN_LINK)
 
     set_target_properties(test_centurion PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/src/test"
