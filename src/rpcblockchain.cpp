@@ -45,29 +45,33 @@ double GetDifficulty(const CBlockIndex* blockindex)
 
 double GetPoWMHashPS()
 {
-    if (pindexBest->nHeight >= LAST_POW_BLOCK)
+    uint32_t lookup = 120;
+    CBlockIndex *pb = pindexBest;
+
+    if (pb == NULL || !pb->nHeight || pb->nHeight >= LAST_POW_BLOCK)
         return 0;
 
-    int nPoWInterval = 72;
-    int64_t nTargetSpacingWorkMin = 30, nTargetSpacingWork = 30;
+    CBlockIndex *pb0 = pb;
+    int64_t minTime = pb0->GetBlockTime();
+    int64_t maxTime = minTime;
+    for (int i = 0; i < lookup; ) {
+        pb0 = pb0->pprev;
+        if (!pb0->IsProofOfWork()) continue;
 
-    CBlockIndex* pindex = pindexGenesisBlock;
-    CBlockIndex* pindexPrevWork = pindexGenesisBlock;
-
-    while (pindex)
-    {
-        if (pindex->IsProofOfWork())
-        {
-            int64_t nActualSpacingWork = pindex->GetBlockTime() - pindexPrevWork->GetBlockTime();
-            nTargetSpacingWork = ((nPoWInterval - 1) * nTargetSpacingWork + nActualSpacingWork + nActualSpacingWork) / (nPoWInterval + 1);
-            nTargetSpacingWork = max(nTargetSpacingWork, nTargetSpacingWorkMin);
-            pindexPrevWork = pindex;
-        }
-
-        pindex = pindex->pnext;
+        int64_t time = pb0->GetBlockTime();
+        minTime = std::min(time, minTime);
+        maxTime = std::max(time, maxTime);
+        i++;
     }
 
-    return GetDifficulty() * 4294.967296 / nTargetSpacingWork;
+    // In case there's a situation where minTime == maxTime, we don't want a divide by zero exception.
+    if (minTime == maxTime)
+        return 0;
+
+    CBigNum workDiff = CBigNum(pb->nChainTrust) - CBigNum(pb0->nChainTrust);
+    int64_t timeDiff = maxTime - minTime;
+
+    return workDiff.getuint64() / timeDiff;
 }
 
 double GetPoSKernelPS()
