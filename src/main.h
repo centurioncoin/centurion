@@ -30,7 +30,7 @@ class CRequestTracker;
 class CNode;
 
 static const int LAST_POW_BLOCK = 19000000;
-static const int HEIGHT_PROTOCOL_V2 = 738000; //block height for activate new functionality
+static const int HEIGHT_PROTOCOL_V2 = 719000; //block height for activate new functionality
 static const unsigned int MAX_BLOCK_SIZE = 2000000;
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
@@ -1123,7 +1123,7 @@ public:
     bool ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions=true);
     bool SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew);
     bool AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos, const uint256& hashProofOfStake);
-    bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true, bool fCheckSig=true) const;
+    bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true, bool fCheckSig=true, int32_t height = 0) const;
     bool AcceptBlock();
     bool GetCoinAgeAndValueStake(uint64_t& nCoinAge, uint64_t& nCoinValue) const; // ppcoin: calculate total coin age spent in block
     bool SignBlock(CWallet& keystore, int64_t nFees);

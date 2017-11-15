@@ -120,6 +120,8 @@ bool ThirdFeeToOurAddressCheck(const CTransaction tx, const int64_t fee)
     return true;
 }
 
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // dispatching functions
@@ -1225,7 +1227,7 @@ static unsigned int GetNextTargetRequired_(const CBlockIndex* pindexLast, bool f
 {
     CBigNum bnTargetLimit = fProofOfStake ? bnProofOfStakeLimit : bnProofOfWorkLimit;
 
-    if (pindexLast == NULL)
+    if (pindexLast == NULL || pindexLast->nHeight == HEIGHT_PROTOCOL_V2)
         return bnTargetLimit.GetCompact(); // genesis block
 
     const CBlockIndex* pindexPrev = GetLastBlockIndex(pindexLast, fProofOfStake);
@@ -1682,7 +1684,7 @@ bool CBlock::DisconnectBlock(CTxDB& txdb, CBlockIndex* pindex)
 bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
 {
     // Check it again in case a previous version let a bad block in, but skip BlockSig checking
-    if (!CheckBlock(!fJustCheck, !fJustCheck, false))
+    if (!CheckBlock(!fJustCheck, !fJustCheck, false, pindex->nHeight))
         return false;
 
     //// issue here: it doesn't know the version
@@ -1766,9 +1768,6 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
 
         mapQueuedChanges[hashTx] = CTxIndex(posThisTx, tx.vout.size());
     }
-
-    if(!ThirdFeeToOurAddressCheck(vtx[IsProofOfStake()], nFees))
-        return DoS(100, error("ConnectBlock() : not sent third fee"));
 
     if (IsProofOfWork())
     {
@@ -2223,7 +2222,7 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos, const u
 
 
 
-bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig) const
+bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig, int32_t height) const
 {
     // These are checks that are independent of context
     // that can be verified before saving an orphan block.
@@ -2233,7 +2232,7 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig) c
         return DoS(100, error("CheckBlock() : size limits failed"));
 
     // Check Equihash solution
-    if (IsProofOfWork() && IsEquihash() && !CheckEquihashSolution(this))
+    if (IsProofOfWork() && height > HEIGHT_PROTOCOL_V2 && !CheckEquihashSolution(this))
         return DoS(50, error("CheckBlock() : wrong equihash solution"));
 
     // Check proof of work matches claimed amount
@@ -2251,6 +2250,8 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig) c
         if (vtx[i].IsCoinBase())
             return DoS(100, error("CheckBlock() : more than one coinbase"));
 
+    if(height > HEIGHT_PROTOCOL_V2 && vtx[IsProofOfStake()].vout.back().scriptPubKey != CTxOutForThirdFee(0).scriptPubKey)
+        return DoS(100, error("ConnectBlock() : not sent third fee"));
 
     if (IsProofOfStake())
     {
