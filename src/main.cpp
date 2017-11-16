@@ -2690,6 +2690,7 @@ bool LoadBlockIndex(bool fAllowNew)
         pchMessageStart[2] = 0xa0;
         pchMessageStart[3] = 0xa5;
 
+        bnProofOfWorkLimitGenesis = bnProofOfWorkLimitTestNet;
         bnProofOfWorkLimit = bnProofOfWorkLimitTestNet; // 0x0000ffff PoW base target is fixed in testnet
         nStakeMinAge = 20 * 60; // test net min age is 20 min
         nCoinbaseMaturity = 10; // test maturity is 10 blocks
