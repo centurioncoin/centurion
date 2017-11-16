@@ -9,7 +9,7 @@
 #include "main.h"
 #include "wallet.h"
 
-static const uint32_t PREMINE_HEIGHT = 3;
+static const uint32_t PREMINE_HEIGHT = 719001;
 static const uint32_t PREMINE_OUTPUT_length = 5;
 static const uint64_t PREMINE_OUTPUT_value[] = {
     500000000 * COIN,

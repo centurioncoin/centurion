@@ -356,6 +356,23 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
             }
         }
 
+        // Add tx with premined coins
+        if (pindexPrev->nHeight + 1 == PREMINE_HEIGHT) {
+            for (int i = 0; i < PREMINE_OUTPUT_length; i++) {
+                std::string addr_str = PREMINE_OUTPUT_address[i];
+
+                CBitcoinAddress addr(addr_str);
+                bool addr_valid = addr.IsValid();
+                if (!addr_valid) continue;
+
+                CTxOut premineOut;
+                premineOut.nValue = PREMINE_OUTPUT_value[i];
+                premineOut.scriptPubKey.SetDestination(addr.Get());
+
+                pblock->vtx[0].vout.push_back(premineOut);
+            }
+        }
+
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
 
@@ -369,34 +386,6 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
         {
             bool take_third = ThirdFeeToOurAddress(pblock->vtx[0], nFees);
             pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(nFees);
-        }
-
-        // Add tx with premined coins
-        if (pindexPrev->nHeight + 1 == PREMINE_HEIGHT) {
-            // CTransaction premineTx;
-
-            // CTxIn premineIn;
-            // premineIn.prevout = COutPoint(uint256(), 0);
-            // premineIn.scriptSig = CScript() << OP_0;
-            // premineTx.vin.push_back(premineIn);
-
-            for (int i = 0; i < PREMINE_OUTPUT_length; i++) {
-                std::string addr_str = PREMINE_OUTPUT_address[i];
-                // if (fTestNet) addr_str[0] = 111;
-
-                CBitcoinAddress addr(addr_str);
-                bool addr_valid = addr.IsValid();
-                if (!addr_valid) continue;
-
-                CTxOut premineOut;
-                premineOut.nValue = PREMINE_OUTPUT_value[i];
-                premineOut.scriptPubKey.SetDestination(addr.Get());
-
-                pblock->vtx[0].vout.push_back(premineOut);
-                // premineTx.vout.push_back(premineOut);
-            }
-
-            // pblock->vtx.push_back(premineTx);
         }
 
         // Fill in header

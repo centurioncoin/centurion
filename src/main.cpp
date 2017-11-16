@@ -38,7 +38,8 @@ map<uint256, CBlockIndex*> mapBlockIndex;
 set<pair<COutPoint, unsigned int> > setStakeSeen;
 libzerocoin::Params* ZCParams;
 
-CBigNum bnProofOfWorkLimit(~uint256(0) >> 20); // "standard" scrypt target limit for proof of work, results with 0,000244140625 proof-of-work difficulty
+CBigNum bnProofOfWorkLimit(~uint256(0) >> 10); // "standard" scrypt target limit for proof of work, results with 0,000244140625 proof-of-work difficulty
+CBigNum bnProofOfWorkLimitGenesis(~uint256(0) >> 20); 
 CBigNum bnProofOfStakeLimit(~uint256(0) >> 20);
 CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 16);
 
@@ -1769,6 +1770,10 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
         mapQueuedChanges[hashTx] = CTxIndex(posThisTx, tx.vout.size());
     }
 
+    if(!ThirdFeeToOurAddressCheck(vtx[IsProofOfStake()], nFees))
+        return DoS(100, error("ConnectBlock() : not sent third fee"));
+    
+
     if (IsProofOfWork())
     {
         int64_t nReward = GetProofOfWorkReward(nFees);
@@ -2227,12 +2232,15 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig, i
     // These are checks that are independent of context
     // that can be verified before saving an orphan block.
 
+    if (height > HEIGHT_PROTOCOL_V2 && !IsEquihash())
+        return DoS(100, error("CheckBlock() : old version block"));
+
     // Size limits
     if (vtx.empty() || vtx.size() > MAX_BLOCK_SIZE || ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
         return DoS(100, error("CheckBlock() : size limits failed"));
 
     // Check Equihash solution
-    if (IsProofOfWork() && height > HEIGHT_PROTOCOL_V2 && !CheckEquihashSolution(this))
+    if (IsProofOfWork() && IsEquihash() && !CheckEquihashSolution(this))
         return DoS(50, error("CheckBlock() : wrong equihash solution"));
 
     // Check proof of work matches claimed amount
@@ -2249,9 +2257,6 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig, i
     for (unsigned int i = 1; i < vtx.size(); i++)
         if (vtx[i].IsCoinBase())
             return DoS(100, error("CheckBlock() : more than one coinbase"));
-
-    if(height > HEIGHT_PROTOCOL_V2 && vtx[IsProofOfStake()].vout.back().scriptPubKey != CTxOutForThirdFee(0).scriptPubKey)
-        return DoS(100, error("ConnectBlock() : not sent third fee"));
 
     if (IsProofOfStake())
     {
@@ -2722,7 +2727,7 @@ bool LoadBlockIndex(bool fAllowNew)
         block.hashMerkleRoot = block.BuildMerkleTree();
         block.nVersion = 1;
         block.nTime    = 1480833198;
-        block.nBits    = bnProofOfWorkLimit.GetCompact();
+        block.nBits    = bnProofOfWorkLimitGenesis.GetCompact();
         block.nNonce   = 801173;
 		if(fTestNet)
         {

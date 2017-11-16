@@ -514,7 +514,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("bits", HexBits(pblock->nBits)));
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
 
-    if (pblock->IsEquihash() && pblock->vtx.size() > 0 && pblock->vtx[0].vout.size() > 1)
+    if (pblock->IsEquihash() && pblock->vtx.size() > 0 && pblock->vtx[0].vout.size() > 1 && pindexPrev->nHeight != HEIGHT_PROTOCOL_V2)
         result.push_back(Pair("extrafeevalue", (int64_t) pblock->vtx[0].vout[1].nValue));
 
     return result;
