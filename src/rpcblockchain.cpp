@@ -55,7 +55,9 @@ double GetPoWMHashPS()
     int64_t minTime = pb0->GetBlockTime();
     int64_t maxTime = minTime;
     for (int i = 0; i < lookup; ) {
+        if (!pb0->pprev) break;
         pb0 = pb0->pprev;
+
         if (!pb0->IsProofOfWork()) continue;
 
         int64_t time = pb0->GetBlockTime();
