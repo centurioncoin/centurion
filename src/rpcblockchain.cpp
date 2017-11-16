@@ -48,14 +48,14 @@ double GetPoWMHashPS()
     uint32_t lookup = 120;
     CBlockIndex *pb = pindexBest;
 
-    if (pb == NULL || !pb->nHeight || pb->nHeight >= LAST_POW_BLOCK)
+    if (pb == nullptr || !pb->nHeight || pb->nHeight >= LAST_POW_BLOCK)
         return 0;
 
     CBlockIndex *pb0 = pb;
     int64_t minTime = pb0->GetBlockTime();
     int64_t maxTime = minTime;
     for (int i = 0; i < lookup; ) {
-        if (!pb0->pprev) break;
+        if (pb0->pprev == nullptr) break;
         pb0 = pb0->pprev;
 
         if (!pb0->IsProofOfWork()) continue;
