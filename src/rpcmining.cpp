@@ -498,11 +498,20 @@ Value getblocktemplate(const Array& params, bool fHelp)
         aMutable.push_back("prevblock");
     }
 
+    Array cbSuffix;
+    for (auto it = std::next(pblock->vtx[0].vout.begin()); it != pblock->vtx[0].vout.end(); it++) {
+        Object suffix;
+        suffix.push_back(Pair("amount", it->nValue));
+        suffix.push_back(Pair("script", HexStr(it->scriptPubKey.begin(), it->scriptPubKey.end())));
+        cbSuffix.push_back(suffix);
+    }
+
     Object result;
     result.push_back(Pair("version", pblock->nVersion));
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
     result.push_back(Pair("transactions", transactions));
     result.push_back(Pair("coinbaseaux", aux));
+    result.push_back(Pair("cbextraouts", cbSuffix));
     result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
     result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetPastTimeLimit()+1));
@@ -513,9 +522,6 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("curtime", (int64_t)pblock->nTime));
     result.push_back(Pair("bits", HexBits(pblock->nBits)));
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
-
-    if (pblock->IsEquihash() && pblock->vtx.size() > 0 && pblock->vtx[0].vout.size() > 1 && pindexPrev->nHeight != HEIGHT_PROTOCOL_V2)
-        result.push_back(Pair("extrafeevalue", (int64_t) pblock->vtx[0].vout[1].nValue));
 
     return result;
 }

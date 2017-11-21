@@ -9,21 +9,14 @@
 #include "main.h"
 #include "wallet.h"
 
-static const uint32_t PREMINE_HEIGHT = 719001;
-static const uint32_t PREMINE_OUTPUT_length = 5;
-static const uint64_t PREMINE_OUTPUT_value[] = {
-    500000000 * COIN,
-    100000000 * COIN,
-     50000000 * COIN,
-     25000000 * COIN,
-     25000000 * COIN,
-};
-static const char PREMINE_OUTPUT_address[][35] = {
-    "CQUESEK7vV5fgnKSeLndS8PELGbe4Md5ye",
-    "CKtdTWW9qxMYnPoDrtGA96ajkJaj5hXzf4",
-    "CUWXgagZHEApTMv6VKbjHZNUeSC972CHp5",
-    "CcGQHf4ufcQWaXPKQEHFPkkG33bEM1CtLJ",
-    "CX2cYTrYCXEzEzeg8ktMRd92x7GxW3XpFU",
+static const uint32_t PREMINE_HEIGHT = HEIGHT_PROTOCOL_V2 + 1;
+const std::vector<std::pair<const char *, const int64_t>> PREMINE =
+{
+    {"CQUESEK7vV5fgnKSeLndS8PELGbe4Md5ye", 500000000l * COIN},
+    {"CKtdTWW9qxMYnPoDrtGA96ajkJaj5hXzf4", 100000000l * COIN},
+    {"CUWXgagZHEApTMv6VKbjHZNUeSC972CHp5", 50000000l * COIN},
+    {"CcGQHf4ufcQWaXPKQEHFPkkG33bEM1CtLJ", 25000000l * COIN},
+    {"CX2cYTrYCXEzEzeg8ktMRd92x7GxW3XpFU", 25000000l * COIN},
 };
 
 /* Generate a new block, without valid proof-of-work */
@@ -43,13 +36,6 @@ bool CheckStake(CBlock* pblock, CWallet& wallet);
 
 /** Base sha256 mining transform */
 void SHA256Transform(void* pstate, void* pinput, const void* pinit);
-
-inline uint64_t GetAllPremine() {
-    uint64_t premine = 0;
-    for(int i = 0; i < sizeof(PREMINE_OUTPUT_value)/sizeof(*PREMINE_OUTPUT_value); ++i)
-        premine += PREMINE_OUTPUT_value[i];
-    return premine;
-}
 
 std::unique_ptr<CBlock> generatePowBlock(CWallet *pwallet, uint64_t& nMaxTries, std::function<bool ()> fnContinue);
 

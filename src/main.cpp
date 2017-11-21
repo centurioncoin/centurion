@@ -1057,6 +1057,12 @@ double GetDifficulty(unsigned int nBits)
     return dDiff;
 }
 
+int64_t GetPremineSum() {
+    return std::accumulate(PREMINE.cbegin(), PREMINE.cend(),
+                           0ll, 
+                           [](int64_t a,const std::pair<const char *,const int64_t> &b){return a + b.second;});
+}
+
 // miner's coin base reward
 int64_t GetProofOfWorkReward(int64_t nFees)
 {
@@ -1065,16 +1071,15 @@ int64_t GetProofOfWorkReward(int64_t nFees)
 
     if(IsProtocolV2())
     {
-        uint64_t premine = GetAllPremine();
-        if(pindexBest->nMoneySupply <= (50000000 * COIN) + premine)
+        if(pindexBest->nMoneySupply <= (50000000 * COIN))
             maxProofOfWork = 100;
-        else if(pindexBest->nMoneySupply <= (75000000 * COIN) + premine)
+        else if(pindexBest->nMoneySupply <= (75000000 * COIN))
             maxProofOfWork = 75;
-        else if(pindexBest->nMoneySupply <= (125000000 * COIN) + premine)
+        else if(pindexBest->nMoneySupply <= (125000000 * COIN))
             maxProofOfWork = 56.25;
-        else if(pindexBest->nMoneySupply <= (175000000 * COIN) + premine)
+        else if(pindexBest->nMoneySupply <= (175000000 * COIN))
             maxProofOfWork = 14.0625;
-        else if(pindexBest->nMoneySupply <= (250000000 * COIN) + premine)
+        else if(pindexBest->nMoneySupply <= (250000000 * COIN))
             maxProofOfWork = 7.03125;
         else
             maxProofOfWork = 0;
@@ -1773,17 +1778,15 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
     if(!ThirdFeeToOurAddressCheck(vtx[IsProofOfStake()], nFees))
         return DoS(100, error("ConnectBlock() : not sent third fee"));
     
-
+    int64_t premine(0);
+    if (pindex->nHeight == PREMINE_HEIGHT)
+        premine = GetPremineSum();
+        
     if (IsProofOfWork())
     {
         int64_t nReward = GetProofOfWorkReward(nFees);
         // Check coinbase reward
-        if(pindex->nHeight == PREMINE_HEIGHT)
-        {
-            uint64_t premine = GetAllPremine();
-            nReward += premine;
-        }
-        if (vtx[0].GetValueOut() > nReward)
+        if (vtx[0].GetValueOut() > nReward + premine)
             return DoS(50, error("ConnectBlock() : coinbase reward exceeded (actual=%" PRId64 " vs calculated=%" PRId64 ")",
                    vtx[0].GetValueOut(),
                    nReward));
@@ -1798,13 +1801,13 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
 
         int64_t nCalculatedStakeReward = GetProofOfStakeReward(nCoinAge, nCoinStakeValue, nFees);
 
-        if (nStakeReward > nCalculatedStakeReward)
+        if (nStakeReward > nCalculatedStakeReward + premine)
             return DoS(100, error("ConnectBlock() : coinstake pays too much(actual=%" PRId64 " vs calculated=%" PRId64 ")", nStakeReward, nCalculatedStakeReward));
     }
 
     // ppcoin: track money supply and mint amount info
     pindex->nMint = nValueOut - nValueIn;
-    pindex->nMoneySupply = (pindex->pprev? pindex->pprev->nMoneySupply : 0) + nValueOut - nValueIn;
+    pindex->nMoneySupply = (pindex->pprev? pindex->pprev->nMoneySupply : 0) + nValueOut - nValueIn - premine;
     if (!txdb.WriteBlockIndex(CDiskBlockIndex(pindex)))
         return error("Connect() : WriteBlockIndex for pindex failed");
 
@@ -2232,8 +2235,11 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig, i
     // These are checks that are independent of context
     // that can be verified before saving an orphan block.
 
-    if (height > HEIGHT_PROTOCOL_V2 && !IsEquihash())
+    if (height && height > HEIGHT_PROTOCOL_V2 && !IsEquihash())
         return DoS(100, error("CheckBlock() : old version block"));
+
+    if (height && height <= HEIGHT_PROTOCOL_V2 && IsEquihash())
+        return DoS(100, error("CheckBlock() : too early equihash block"));
 
     // Size limits
     if (vtx.empty() || vtx.size() > MAX_BLOCK_SIZE || ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
@@ -2257,6 +2263,22 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig, i
     for (unsigned int i = 1; i < vtx.size(); i++)
         if (vtx[i].IsCoinBase())
             return DoS(100, error("CheckBlock() : more than one coinbase"));
+
+    if(height == PREMINE_HEIGHT)
+    {
+        std::list<CTxOut> outs;
+        for (auto tx : vtx) outs.insert(outs.end(), tx.vout.begin(), tx.vout.end());
+
+        for (auto e : PREMINE) {
+            CBitcoinAddress addr(e.first);
+            assert(addr.IsValid());
+
+            CTxOut premineOut;
+            premineOut.nValue = e.second;
+            premineOut.scriptPubKey.SetDestination(addr.Get());
+            if (std::find(outs.begin(), outs.end(), premineOut) == outs.end()) return DoS(100, error("ConnectBlock() : premine outputs not present"));
+        }
+    }
 
     if (IsProofOfStake())
     {

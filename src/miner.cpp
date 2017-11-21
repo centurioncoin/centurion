@@ -358,15 +358,12 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
 
         // Add tx with premined coins
         if (pindexPrev->nHeight + 1 == PREMINE_HEIGHT) {
-            for (int i = 0; i < PREMINE_OUTPUT_length; i++) {
-                std::string addr_str = PREMINE_OUTPUT_address[i];
-
-                CBitcoinAddress addr(addr_str);
-                bool addr_valid = addr.IsValid();
-                if (!addr_valid) continue;
+            for (auto e : PREMINE) {
+                CBitcoinAddress addr(e.first);
+                assert(addr.IsValid());
 
                 CTxOut premineOut;
-                premineOut.nValue = PREMINE_OUTPUT_value[i];
+                premineOut.nValue = e.second;
                 premineOut.scriptPubKey.SetDestination(addr.Get());
 
                 pblock->vtx[0].vout.push_back(premineOut);
@@ -395,6 +392,8 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake, int64_t* pFees)
         if (!fProofOfStake)
             pblock->UpdateTime(pindexPrev);
         pblock->nNonce         = 0;
+        if (pindexPrev->nHeight < HEIGHT_PROTOCOL_V2)
+            pblock->nVersion = 6;
     }
 
     return pblock.release();
