@@ -16,6 +16,7 @@
 #include "equihash.h"
 
 #include <list>
+#include <numeric>
 
 class CWallet;
 class CBlock;
