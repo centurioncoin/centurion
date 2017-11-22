@@ -1,4 +1,4 @@
-Centurion is a hybrid PoW/PoS cryptocurrency.
+Centurion Future is a hybrid PoW/PoS cryptocurrency.
 ---------------------------------------------
 
 Mainnet:
@@ -17,12 +17,16 @@ Specifications:
 ---------------
 
 - Short: CNT
-- Total coin: 250 Million coin cap.
-- X11 hashing algorithm
+- Total coin: 1.000.000.000 Million coin cap.
+- Equihash algorithm
+- Pop algo for best power decentralization
+- Powk rewards 
+- Cad ( Charity automatic donation)
 - Block time: 1 minute
+- Block Size: 2Mb
 - diff. retarget 15 blocks
 - 100 coin reward halving every 129600 Block, the end of POW is after 3 block halvings.
-- Stake Interest: 3%
+- Stake Interest: 3%-5%-7%-10%-15% 
 - Minimum Stake Age, 24 hours, One Year Max age
 
 License
