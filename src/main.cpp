@@ -38,8 +38,7 @@ map<uint256, CBlockIndex*> mapBlockIndex;
 set<pair<COutPoint, unsigned int> > setStakeSeen;
 libzerocoin::Params* ZCParams;
 
-CBigNum bnProofOfWorkLimit(~uint256(0) >> 10); // "standard" scrypt target limit for proof of work, results with 0,000244140625 proof-of-work difficulty
-CBigNum bnProofOfWorkLimitGenesis(~uint256(0) >> 20); 
+CBigNum bnProofOfWorkLimit(~uint256(0) >> 20); // "standard" scrypt target limit for proof of work, results with 0,000244140625 proof-of-work difficulty
 CBigNum bnProofOfStakeLimit(~uint256(0) >> 20);
 CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 16);
 
@@ -2712,7 +2711,6 @@ bool LoadBlockIndex(bool fAllowNew)
         pchMessageStart[2] = 0xa0;
         pchMessageStart[3] = 0xa5;
 
-        bnProofOfWorkLimitGenesis = bnProofOfWorkLimitTestNet;
         bnProofOfWorkLimit = bnProofOfWorkLimitTestNet; // 0x0000ffff PoW base target is fixed in testnet
         nStakeMinAge = 20 * 60; // test net min age is 20 min
         nCoinbaseMaturity = 10; // test maturity is 10 blocks
@@ -2750,7 +2748,7 @@ bool LoadBlockIndex(bool fAllowNew)
         block.hashMerkleRoot = block.BuildMerkleTree();
         block.nVersion = 1;
         block.nTime    = 1480833198;
-        block.nBits    = bnProofOfWorkLimitGenesis.GetCompact();
+        block.nBits    = bnProofOfWorkLimit.GetCompact();
         block.nNonce   = 801173;
 		if(fTestNet)
         {
