@@ -17,15 +17,13 @@ Specifications:
 ---------------
 
 - Short: CNT
-- Total coin: 1.000.000.000 Million coin cap.
+- Total coin: 1.000.000.000 CNT FUTURE
 - Equihash algorithm
-- Pop algo for best power decentralization
-- Powk rewards 
-- Cad ( Charity automatic donation)
+- POP Retarget Algo for decentralization
+- CAD ( Charity automatic donation)
 - Block time: 1 minute
 - Block Size: 2Mb
-- diff. retarget 15 blocks
-- 100 coin reward halving every 129600 Block, the end of POW is after 3 block halvings.
+- Diff. retarget: every block
 - Stake Interest: 3%-5%-7%-10%-15% 
 - Minimum Stake Age, 24 hours, One Year Max age
 
