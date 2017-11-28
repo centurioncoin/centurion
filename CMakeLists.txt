@@ -46,8 +46,9 @@ if(BUILD_GUI)
 
     include_directories(${Qt5Widgets_INCLUDE_DIRS})
 
+
     if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mwindows")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mwindows")
     endif()
     if(UNIX)
         list(APPEND GUI_LIBS Qt5::Widgets rt)
@@ -87,7 +88,7 @@ if(BUILD_GUI)
         list(APPEND GUI_SOURCES "src/qt/macdockiconhandler.mm")
     endif()
     
-    add_executable(centurion-qt ${CORE_SOURCES} ${GUI_SOURCES})
+    add_executable(centurion-qt ${CORE_SOURCES} ${GUI_SOURCES} src/qt/res/bitcoin-qt.rc)
     add_dependencies(centurion-qt gen_translations)
     target_link_libraries(centurion-qt ${CORE_LIBS} ${GUI_LIBS})
     target_compile_definitions(centurion-qt PRIVATE -DQT_GUI)
