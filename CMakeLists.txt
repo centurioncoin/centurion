@@ -5,6 +5,7 @@ include(CMakeToolsHelpers OPTIONAL)
 
 option(BUILD_GUI "Build GUI" ON)
 option(BUILD_TESTS "Build tests" ON)
+option(USE_UPNP "Use UPNP" ON)
 
 set(CMAKE_CXX_STANDARD 11)
 add_definitions(-DBOOST_SPIRIT_THREADSAFE -DBOOST_THREAD_USE_LIB)
@@ -21,6 +22,10 @@ set(CORE_LIBS
     Boost::system Boost::filesystem Boost::program_options Boost::thread 
     ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${LEVELDB_LIBS}
 )
+
+if(USE_UPNP)
+    add_definitions(-DUSE_UPNP=1)
+endif()
 
 if(MSYS)
     list(APPEND CORE_LIBS wsock32 ws2_32 shlwapi)
