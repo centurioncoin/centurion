@@ -6,6 +6,7 @@ the OpenSSL Toolkit (http://www.openssl.org/).  This product includes
 cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP
 software written by Thomas Bernard.
 
+DEPRECATED. Please follow doc/README.md instructions to build.
 
 See readme-qt.rst for instructions on building centurion QT, the
 graphical user interface.

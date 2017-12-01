@@ -20,12 +20,13 @@ help further advance the field of crypto-currency.
 Build local LevelDB:
 ```
 cd src/leveldb
-make
+make libleveldb.a libmemenv.a
 cd ../..
 ```
 
 Build Centurion:
 ```
+mkdir build
 cd build
 cmake ..
 make
