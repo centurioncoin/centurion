@@ -1142,6 +1142,8 @@ static const char *strDNSSeed[][2] = {
 	{"162.243.164.133", "138.68.154.87"},
     {"139.59.228.53", "node1.centurion.org"},
     {"node1.centurionlab.org", "node1.centurionlab.org"},
+    {"node2.centurionlab.org", "node2.centurionlab.org"},
+    {"node3.centurionlab.org", "node3.centurionlab.org"},
 };
 
 void ThreadDNSAddressSeed(void* parg)
