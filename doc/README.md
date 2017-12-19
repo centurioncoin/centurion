@@ -46,6 +46,11 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
 
 ### Dependencies
+
+Ubuntu/Debian
+
+apt install build-essential cmake libboost-all-dev libssl-dev libsodium-dev libminiupnpc-dev libdb-dev libdb++-dev
+
 | Library | Decription |
 | --- | --- |
 | Boost | Library for threading, data structures, etc |

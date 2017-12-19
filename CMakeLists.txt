@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.0.2)
+include(CheckCXXCompilerFlag)
 
 project(centurioncoin)
 include(CMakeToolsHelpers OPTIONAL)
@@ -7,8 +8,17 @@ option(BUILD_GUI "Build GUI" ON)
 option(BUILD_TESTS "Build tests" ON)
 option(USE_UPNP "Use UPNP" ON)
 
-set(CMAKE_CXX_STANDARD 11)
-add_definitions(-DBOOST_SPIRIT_THREADSAFE -DBOOST_THREAD_USE_LIB)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+set (CMAKE_CXX_FLAGS "-pthread ${CMAKE_CXX_FLAGS}")
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else()
+	message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
+add_definitions(-DBOOST_SPIRIT_THREADSAFE -DBOOST_THREAD_USE_LIB -DBOOST_NO_CXX11_SCOPED_ENUMS)
 
 # Core libs
 find_package(Boost REQUIRED COMPONENTS system filesystem program_options thread)
@@ -19,7 +29,7 @@ set(LEVELDB_LIBS "${CMAKE_SOURCE_DIR}/src/leveldb/libleveldb.a" "${CMAKE_SOURCE_
 include_directories(${Boost_INCLUDE_DIRS} ${OpenSSL_INCLUDE_DIRS} ${Miniupnpc_INCLUDE_DIRS})
 set(CORE_LIBS
     db_cxx miniupnpc sodium
-    Boost::system Boost::filesystem Boost::program_options Boost::thread 
+    boost_system boost_filesystem boost_program_options boost_thread
     ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${LEVELDB_LIBS}
 )
 
