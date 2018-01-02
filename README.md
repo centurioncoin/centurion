@@ -16,7 +16,7 @@ Testnet:
 Specifications:
 ---------------
 
-- Short: CNT
+- Short: CNTF
 - Total coin: 1.000.000.000 CNT FUTURE
 - Equihash algorithm
 - POP Retarget Algo for decentralization
