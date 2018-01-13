@@ -88,3 +88,54 @@ cd build
 /usr/lib/mxe/usr/bin/i686-w64-mingw32.static-cmake ..
 make
 ```
+
+SUMMARY STEP BY STEP
+
+****
+**** Packet to install
+****
+
+sudo add-apt-repository ppa:bitcoin/bitcoin
+sudo apt-get update
+sudo apt-get install libdb4.8-dev libdb4.8++-dev build-essential libtool
+autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
+git libboost-all-dev libminiupnpc-dev
+
+****
+**** Optionally crate  swap file  for compile
+****
+
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+
+git clone https://github.com/centurioncoin/centurion.git
+
+cd centurion/src/
+make -f makefile.unix
+
+****
+**** Build local LevelDB
+****
+
+cd src/leveldb
+cd leveldb/
+make libleveldb.a libmemenv.a
+cd ../..
+
+****
+**** Build Centurion
+****
+**** from the centurion folder downloaded from github
+
+
+mkdir build
+cd build
+cmake .. -DBUILD_GUI=OFF -DBUILD_TESTS=OFF
+make
+
+****
+**** Binaries are placed in same dir (build)
+****
